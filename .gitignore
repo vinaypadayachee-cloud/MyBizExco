@@ -1,0 +1,10 @@
+# Secrets — never commit real environment values
+.env
+.env.local
+.env*.local
+
+# Vercel local state
+.vercel
+
+# Node
+node_modules
