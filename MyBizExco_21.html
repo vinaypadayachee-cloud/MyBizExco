@@ -1,0 +1,2507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>MyBizExco</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f7f7f7;color:#111;font-size:15px;line-height:1.5}
+button{cursor:pointer;font-family:inherit}
+input,textarea,select{font-family:inherit;font-size:14px}
+.screen{min-height:100vh;display:none}
+.screen.active{display:block}
+/* WELCOME */
+#welcome{background:#0f172a;min-height:100vh;display:none;flex-direction:column;align-items:center;justify-content:center;padding:32px 20px;text-align:center}
+#welcome.active{display:flex}
+.w-logo{font-size:52px;font-weight:900;color:#fff;letter-spacing:-2px;margin-bottom:8px}
+.w-logo span{color:#F59E0B}
+.w-sub{font-size:16px;color:rgba(255,255,255,0.6);margin-bottom:32px;line-height:1.6;max-width:380px}
+.w-cards{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:32px;width:100%;max-width:420px}
+.w-card{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:14px 10px}
+.w-card-icon{font-size:22px;margin-bottom:6px}
+.w-card-title{font-size:12px;font-weight:700;color:#fff;margin-bottom:3px}
+.w-card-body{font-size:11px;color:rgba(255,255,255,0.5);line-height:1.4}
+.btn-primary{background:#F59E0B;color:#000;font-weight:800;font-size:15px;border:none;border-radius:12px;padding:16px 24px;width:100%;max-width:420px;margin-bottom:10px}
+.btn-outline{background:transparent;color:rgba(255,255,255,0.7);font-weight:600;font-size:14px;border:1px solid rgba(255,255,255,0.2);border-radius:12px;padding:13px 24px;width:100%;max-width:420px}
+/* SETUP */
+#setup{background:#f8fafc;height:100vh;overflow-y:auto;-webkit-overflow-scrolling:touch;display:none}
+#setup.active{display:block}
+.setup-header{background:#0f172a;padding:14px 16px;position:sticky;top:0;z-index:100}
+.setup-header-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.setup-logo{font-size:17px;font-weight:900;color:#F59E0B}
+.setup-logo span{color:#fff}
+.setup-step-label{font-size:12px;color:rgba(255,255,255,0.5)}
+.setup-progress{height:4px;background:rgba(255,255,255,0.1);border-radius:2px}
+.setup-progress-bar{height:4px;background:#F59E0B;border-radius:2px;transition:width 0.3s}
+.setup-body{max-width:520px;margin:0 auto;padding:0 16px 60px}
+.step-title{font-size:22px;font-weight:800;color:#0f172a;margin-bottom:4px;padding-top:24px}
+.step-sub{font-size:14px;color:#64748b;margin-bottom:20px}
+.info-box{background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 14px;margin-bottom:16px;display:flex;gap:10px}
+.info-box-icon{font-size:18px;flex-shrink:0}
+.info-box-title{font-size:13px;font-weight:700;color:#1d4ed8;margin-bottom:2px}
+.info-box-body{font-size:12px;color:#475569;line-height:1.55}
+.field{margin-bottom:16px}
+.field label{font-size:13px;font-weight:700;color:#0f172a;display:block;margin-bottom:6px}
+.req{font-size:10px;font-weight:700;color:#dc2626;background:#fee2e2;padding:1px 6px;border-radius:4px;margin-left:4px}
+.field input,.field textarea,.field select{width:100%;padding:11px 13px;border:1px solid #e2e8f0;border-radius:10px;font-size:14px;outline:none;background:#fff;transition:border-color 0.2s}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:#F59E0B}
+.hint{font-size:11px;color:#94a3b8;margin-top:4px}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+/* SECTOR GRID */
+.sector-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px}
+.sector-btn{padding:10px 6px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;text-align:center;cursor:pointer;transition:all 0.15s}
+.sector-btn.selected{border-color:#F59E0B;background:#fffbeb}
+.sector-btn-icon{font-size:18px;margin-bottom:3px}
+.sector-btn-label{font-size:11px;font-weight:600;color:#374151;line-height:1.3}
+.sector-btn.selected .sector-btn-label{color:#92400e}
+/* DIST LISTS */
+.dist-card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:10px;transition:border-color 0.2s}
+.dist-card.active{border-color:#F59E0B}
+.dist-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.dist-card-info .title{font-size:13px;font-weight:700;color:#0f172a}
+.dist-card-info .desc{font-size:11px;color:#94a3b8;margin-top:2px}
+.badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;margin-left:4px}
+.badge-active{background:#d1fae5;color:#065f46}
+.badge-off{background:#f3f4f6;color:#6b7280}
+.toggle-btn{padding:6px 14px;border-radius:20px;border:none;font-weight:700;font-size:12px;cursor:pointer;flex-shrink:0}
+.toggle-on{background:#F59E0B;color:#000}
+.toggle-off{background:#e2e8f0;color:#6b7280}
+.email-list{font-size:12px;color:#475569;margin-bottom:8px;padding:6px 10px;background:#f8fafc;border-radius:6px}
+.add-row{display:flex;gap:8px}
+.add-row input{flex:1;padding:9px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none}
+.add-btn{padding:9px 14px;background:#F59E0B;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer}
+.add-btn-green{background:#25D366;color:#fff}
+/* WA */
+.wa-card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:10px}
+.wa-card.active{border-color:#25D366}
+/* EXCO */
+.exco-card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:10px;display:flex;gap:12px}
+.exco-avatar{width:40px;height:40px;border-radius:50%;background:#fffbeb;border:2px solid #F59E0B;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.exco-role{font-size:13px;font-weight:700;color:#0f172a}
+.exco-focus{font-size:11px;color:#94a3b8;margin-bottom:8px}
+/* DECISION */
+.decision-card{background:#fff;border:2px solid #e2e8f0;border-radius:10px;padding:16px;margin-bottom:12px;transition:border-color 0.2s}
+.decision-card.active{border-color:#F59E0B}
+.decision-header{display:flex;justify-content:space-between;align-items:flex-start}
+.decision-title{font-size:14px;font-weight:700;color:#0f172a;margin-bottom:4px}
+.decision-body{font-size:13px;color:#64748b;line-height:1.6}
+.active-rules-box{background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:14px;margin-top:8px}
+.active-rules-title{font-size:11px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px}
+/* NAV BUTTONS */
+.nav-btns{display:flex;gap:12px;margin-top:24px;padding-bottom:8px}
+.btn-back{flex:1;padding:14px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;font-weight:700;font-size:14px;color:#374151}
+.btn-next{flex:2;padding:14px;background:#F59E0B;border:none;border-radius:12px;font-weight:800;font-size:14px;color:#000}
+.btn-next:disabled{background:#e2e8f0;color:#94a3b8;cursor:default}
+.btn-launch{flex:2;padding:14px;background:#059669;border:none;border-radius:12px;font-weight:800;font-size:15px;color:#fff}
+/* ====== MAIN APP ====== */
+#app{display:none;flex-direction:column;height:100vh;background:#f7f7f7;overflow:hidden}
+#app.active{display:flex}
+/* TOPBAR */
+.topbar{background:#F59E0B;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+.topbar-logo{font-size:16px;font-weight:900;color:#000;letter-spacing:-0.5px}
+.topbar-right{display:flex;gap:6px;align-items:center}
+.topbar-score{font-size:11px;color:rgba(0,0,0,0.6)}
+.icon-btn{background:rgba(0,0,0,0.12);border:none;border-radius:6px;padding:5px 8px;font-size:13px;cursor:pointer}
+/* URGENT BANNER */
+.urgent-banner{background:#D97706;padding:8px 16px;font-size:12px;font-weight:600;color:#fff;display:none}
+/* TAB CONTENT */
+.tab-content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 14px 80px}
+/* BOTTOM NAV */
+.bottom-nav{background:#fff;border-top:1px solid #e2e8f0;display:flex;flex-shrink:0}
+.nav-tab{flex:1;padding:8px 4px 6px;border:none;background:none;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;font-size:8px;font-weight:600;color:#94a3b8;transition:color 0.15s}
+.nav-tab.active{color:#F59E0B}
+.nav-tab-icon{font-size:18px;line-height:1}
+/* CARDS */
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px;margin-bottom:10px}
+.card-title{font-size:14px;font-weight:800;color:#111;margin-bottom:8px}
+.sh{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#94a3b8;margin-bottom:8px;display:block}
+/* HOME SCORE */
+.score-hero{background:linear-gradient(135deg,#fffbeb,#fff);border:1px solid #fde68a;border-radius:14px;padding:20px;margin-bottom:10px}
+.score-circle{width:72px;height:72px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:900;margin:0 auto 10px;color:#fff}
+.score-circle.green{background:#059669}
+.score-circle.amber{background:#D97706}
+.score-circle.red{background:#dc2626}
+.score-label{text-align:center;font-size:13px;font-weight:700;color:#92400e;margin-bottom:14px}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:10px}
+.stat-box{background:#f8fafc;border-radius:8px;padding:10px 6px;text-align:center}
+.stat-num{font-size:20px;font-weight:900;color:#111}
+.stat-lbl{font-size:9px;color:#94a3b8;margin-top:2px}
+/* MEETING SETUP */
+.meeting-type-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.mt-btn{padding:12px 8px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;text-align:left;cursor:pointer;transition:all 0.15s}
+.mt-btn.selected{border-color:#F59E0B;background:#fffbeb}
+.mt-btn.selected.coffee{border-color:#92400e;background:#fef3c7}
+.mt-icon{font-size:20px;margin-bottom:3px}
+.mt-label{font-size:12px;font-weight:700;color:#333}
+.mt-freq{font-size:10px;color:#94a3b8}
+/* IN SESSION */
+.session-header{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.session-ref{font-size:12px;color:#92400e;font-weight:700;margin-bottom:2px}
+.session-title{font-size:16px;font-weight:800;color:#111}
+.session-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.sbtn{padding:8px 14px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;font-size:12px;font-weight:700;cursor:pointer}
+/* AGENDA ITEMS */
+.agenda-item{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-bottom:8px}
+.ai-text{font-size:13px;color:#111;margin-bottom:8px;font-weight:600}
+.ai-buttons{display:flex;gap:6px;flex-wrap:wrap}
+.ai-buttons button{padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;border:none;cursor:pointer}
+.btn-deliberate{background:#fffbeb;color:#92400e;border:1px solid #fde68a!important}
+.btn-remove{background:#fff5f5;color:#dc2626;border:1px solid #fca5a5!important}
+/* EXEC RESULT */
+.exec-result{border-left:3px solid #e2e8f0;padding:8px 10px;margin-bottom:6px;border-radius:0 6px 6px 0}
+.exec-result.support{border-color:#059669;background:#f0fff4}
+.exec-result.caution{border-color:#D97706;background:#fffbeb}
+.exec-result.oppose{border-color:#dc2626;background:#fff5f5}
+.exec-name{font-size:11px;font-weight:700;color:#374151}
+.exec-verdict{font-size:10px;font-weight:800;text-transform:uppercase;padding:1px 6px;border-radius:3px;margin-left:4px}
+.verdict-support{background:#d1fae5;color:#065f46}
+.verdict-caution{background:#fef3c7;color:#92400e}
+.verdict-oppose{background:#fee2e2;color:#991b1b}
+.exec-analysis{font-size:12px;color:#374151;margin-top:4px;line-height:1.5}
+/* SYNTHESIS */
+.synthesis-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-top:8px}
+.synthesis-result{font-size:13px;font-weight:700;padding:6px 10px;border-radius:6px;margin-bottom:8px;text-align:center}
+.result-pass{background:#d1fae5;color:#065f46}
+.result-fail{background:#fee2e2;color:#991b1b}
+/* MINUTES TAB */
+.session-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:12px;margin-bottom:10px}
+.session-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.session-card-type{font-size:12px;font-weight:800;color:#111}
+.session-card-date{font-size:11px;color:#94a3b8}
+.session-card-btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.session-card-btn{padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;font-size:11px;font-weight:700;cursor:pointer}
+/* ACTIONS TAB */
+.action-card{background:#fff;border-left:4px solid #F59E0B;border-radius:0 10px 10px 0;padding:12px;margin-bottom:8px;border-top:1px solid #e2e8f0;border-right:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0}
+.action-card.high{border-left-color:#dc2626}
+.action-card.closed{border-left-color:#059669;opacity:0.7}
+.action-card.review{border-left-color:#7C3AED}
+.action-text{font-size:13px;font-weight:600;color:#111;margin-bottom:4px}
+.action-meta{font-size:11px;color:#94a3b8}
+.action-btns{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.action-btn{padding:5px 10px;border-radius:6px;border:1px solid #e2e8f0;background:#fff;font-size:11px;font-weight:700;cursor:pointer}
+/* MORE TAB */
+.more-section{margin-bottom:20px}
+.more-section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#94a3b8;margin-bottom:10px}
+.more-row{display:flex;justify-content:space-between;align-items:center;padding:12px;background:#fff;border-radius:10px;border:1px solid #e2e8f0;margin-bottom:8px;cursor:pointer}
+.more-row-label{font-size:14px;font-weight:600;color:#111}
+.more-row-icon{font-size:16px}
+/* MODALS */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:500;display:none;align-items:flex-end;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal-box{background:#fff;border-radius:20px 20px 0 0;padding:24px 18px 36px;width:100%;max-width:500px;max-height:85vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.modal-title{font-size:17px;font-weight:800;color:#111}
+.modal-close{background:#f1f5f9;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer}
+/* TOAST */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:600;z-index:999;display:none;white-space:nowrap}
+.toast.show{display:block}
+/* LOADING */
+.loading-dots{display:inline-flex;gap:4px}
+.loading-dots span{width:6px;height:6px;border-radius:50%;background:#F59E0B;animation:dot 1.2s infinite}
+.loading-dots span:nth-child(2){animation-delay:0.2s}
+.loading-dots span:nth-child(3){animation-delay:0.4s}
+@keyframes dot{0%,80%,100%{opacity:0.2}40%{opacity:1}}
+/* AMBER INPUT FOCUS */
+input:focus{border-color:#F59E0B!important;box-shadow:0 0 0 2px rgba(245,158,11,0.15)}
+.coffee-note{background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:8px 12px;font-size:12px;color:#92400e;margin-top:8px;line-height:1.5}
+.empty-state{text-align:center;padding:40px 20px;color:#94a3b8}
+.empty-state-icon{font-size:48px;margin-bottom:12px}
+.empty-state-title{font-size:16px;font-weight:700;color:#374151;margin-bottom:6px}
+.empty-state-body{font-size:13px;line-height:1.6}
+/* ═══ TOP SECTION TABS (horizontal nav carried across every page) ═══ */
+.top-tabs-wrap{background:#0f172a;padding:8px 10px;flex-shrink:0;display:flex;align-items:center;gap:8px}
+.top-tabs-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap;flex:1;min-width:0;scrollbar-width:none}
+.top-tabs-scroll::-webkit-scrollbar{display:none}
+.top-tab-btn{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.65);font-size:11px;font-weight:700;padding:8px 12px;border-radius:20px;margin-right:6px;cursor:pointer;white-space:nowrap}
+.top-tab-btn.active{background:#F59E0B;border-color:#F59E0B;color:#000}
+.top-tab-btn .num{display:inline-block;width:15px;height:15px;line-height:15px;border-radius:50%;background:rgba(255,255,255,0.15);font-size:9px;text-align:center}
+.top-tab-btn.active .num{background:rgba(0,0,0,0.2)}
+.contact-us-btn{flex-shrink:0;background:#0D9488;border:1px solid #0D9488;color:#fff;font-size:11px;font-weight:800;padding:8px 12px;border-radius:20px;cursor:pointer;white-space:nowrap}
+/* ═══ CONTACT US TABLE ═══ */
+.contact-row{display:flex;justify-content:space-between;align-items:center;padding:12px 4px;border-bottom:1px solid #f1f5f9;gap:10px}
+.contact-row:last-child{border-bottom:none}
+.contact-row-label{font-size:13px;font-weight:700;color:#0f172a}
+.contact-row-sub{font-size:11px;color:#94a3b8;margin-top:2px}
+.contact-row-action{padding:8px 14px;background:#0D9488;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;text-decoration:none;flex-shrink:0}
+/* ═══ GREEN COLOUR SEPARATION: email vs whatsapp ═══ */
+.toggle-on-email{background:#0D9488;color:#fff}
+.toggle-on-wa{background:#25D366;color:#fff}
+.badge-email-active{background:#ccfbf1;color:#0f766e}
+.badge-wa-active{background:#dcfce7;color:#15803d}
+/* ═══ PRIORITY LIST ═══ */
+.prio-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.prio-num{width:22px;height:22px;border-radius:50%;background:#fffbeb;border:1px solid #fde68a;color:#92400e;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.prio-row input{flex:1;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none}
+.prio-remove{background:none;border:none;color:#cbd5e1;font-size:16px;cursor:pointer;flex-shrink:0;padding:2px 6px}
+/* ═══ UPLOAD AREA ═══ */
+.upload-zone{border:2px dashed #cbd5e1;border-radius:12px;padding:18px;text-align:center;background:#f8fafc;cursor:pointer;margin-bottom:10px}
+.upload-zone:hover{border-color:#F59E0B;background:#fffbeb}
+.doc-row{display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:9px 12px;margin-bottom:6px;font-size:12px}
+.doc-row .doc-name{font-weight:700;color:#0f172a}
+.doc-row .doc-meta{color:#94a3b8;font-size:10px}
+.doc-remove{background:none;border:none;color:#dc2626;font-size:13px;cursor:pointer;font-weight:700}
+/* ═══ COMMS / SIZE GUIDANCE ═══ */
+.size-guide{background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:10px 12px;font-size:11px;color:#0c4a6e;line-height:1.6;margin-bottom:12px}
+.comms-section-title{font-size:13px;font-weight:800;color:#0f172a;display:flex;align-items:center;gap:6px;margin:18px 0 8px;padding-top:6px;border-top:1px solid #e2e8f0}
+.subcomm-input{width:100%;padding:9px 11px;border:1px solid #F59E0B;border-radius:8px;font-size:13px;outline:none;margin-top:8px}
+/* ═══ FAQ / ABOUT ═══ */
+.faq-item{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;margin-bottom:8px}
+.faq-q{font-size:13px;font-weight:700;color:#0f172a;margin-bottom:4px}
+.faq-a{font-size:12px;color:#64748b;line-height:1.6}
+/* ═══ VERSION HISTORY ═══ */
+.version-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:12px}
+/* ═══ APP-LEVEL BACK/CONTINUE (after launch) ═══ */
+.app-nav-btns{display:flex;gap:12px;margin-top:22px;padding-top:4px}
+</style>
+</head>
+<body>
+
+<!-- WELCOME SCREEN -->
+<div id="welcome" class="active">
+  <div class="top-tabs-wrap" id="welcomeTopTabs" style="width:100%;margin-bottom:18px"></div>
+  <div class="w-logo">MyBiz<span>Exco</span></div>
+  <div class="w-sub">Congratulations on choosing South Africa's most powerful AI governance tool. You're about to run your business like the best in the world.</div>
+  <div class="w-cards">
+    <div class="w-card"><div class="w-card-icon">🤖</div><div class="w-card-title">AI Board</div><div class="w-card-body">6 exec voices deliberate every decision</div></div>
+    <div class="w-card"><div class="w-card-icon" id="flagCardIcon">🇿🇦</div><div class="w-card-title">SA Law</div><div class="w-card-body">17 sectors, all regulators built in</div></div>
+    <div class="w-card"><div class="w-card-icon">📋</div><div class="w-card-title">Minutes</div><div class="w-card-body">Boardroom-ready minutes instantly</div></div>
+  </div>
+  <button class="btn-primary" onclick="startSetup()">🚀 Set up my business — takes 5 minutes</button>
+  <button class="btn-outline" onclick="document.getElementById('restoreFile').click()">📂 Restore a saved session</button>
+  <input type="file" id="restoreFile" accept=".json" style="display:none" onchange="restoreSession(event)"/>
+</div>
+
+<!-- SETUP WIZARD -->
+<div id="setup">
+  <div class="setup-header">
+    <div class="setup-header-row">
+      <div class="setup-logo">MyBiz<span>Exco</span></div>
+      <div class="setup-step-label" id="stepLabel">Step 1 of 7 — About MyBizExco</div>
+    </div>
+    <div class="setup-progress"><div class="setup-progress-bar" id="progressBar" style="width:14%"></div></div>
+  </div>
+  <div class="top-tabs-wrap" id="setupTopTabs"></div>
+  <div class="setup-body" id="setupBody"></div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-logo">MyBiz<span style="color:rgba(0,0,0,0.5)">Exco</span></div>
+    <div class="topbar-right">
+      <span class="topbar-score" id="topbarScore"></span>
+      <button class="icon-btn" id="voiceToggleBtn" onclick="toggleVoice()" title="Voice">🔇</button>
+      <button class="icon-btn" onclick="saveData()" title="Save">💾</button>
+    </div>
+  </div>
+  <div class="top-tabs-wrap" id="appTopTabs"></div>
+  <div class="urgent-banner" id="urgentBanner"></div>
+  <div class="tab-content" id="tabContent"></div>
+  <div class="bottom-nav" id="bottomNav">
+    <button class="nav-tab active" data-tab="home" onclick="switchTab('home')"><div class="nav-tab-icon">📊</div>Home</button>
+    <button class="nav-tab" data-tab="board" onclick="switchTab('board')"><div class="nav-tab-icon">🏛</div>Board</button>
+    <button class="nav-tab" data-tab="log" onclick="switchTab('log')"><div class="nav-tab-icon">📋</div>Minutes</button>
+    <button class="nav-tab" data-tab="actions" onclick="switchTab('actions')"><div class="nav-tab-icon">✅</div>Actions</button>
+    <button class="nav-tab" data-tab="more" onclick="switchTab('more')"><div class="nav-tab-icon">⋯</div>More</button>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal-box" id="modalBox"></div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// Visible error reporting - never a silent blank page again
+window.onerror = function(msg, src, line, col, err) {
+  var box = document.createElement('div');
+  box.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#dc2626;color:#fff;padding:12px 16px;font-size:12px;z-index:99999;font-family:monospace';
+  box.textContent = 'Error: ' + msg + ' (line ' + line + ')';
+  document.body.appendChild(box);
+  return false;
+};
+
+// ═══════════════════════════════════════════
+// COUNTRY CONFIG (swap this block for other country versions)
+// ═══════════════════════════════════════════
+const COUNTRY = { flag: "🇿🇦", name: "South Africa", demonym: "SA" };
+
+// ═══════════════════════════════════════════
+// TOP SECTION TABS — carried on every screen (Welcome → Meeting Types)
+// ═══════════════════════════════════════════
+const TOP_TABS = [
+  { k:'welcome',       label:'Welcome',                 icon:'👋' },
+  { k:'about',         label:'About MyBizExco',         icon:'ℹ️' },
+  { k:'business',      label:'About Your Business',     icon:'🏢' },
+  { k:'compliance',    label:'Compliance & Legal',      icon:'⚖️' },
+  { k:'leadership',    label:'Leadership Team',         icon:'👥' },
+  { k:'decisions',     label:'Decision Needed',         icon:'🗳️' },
+  { k:'communication', label:'Communication',           icon:'📣' },
+  { k:'meetingtypes',  label:'Meeting Types',           icon:'📅' }
+];
+// Maps a top-tab key to a setup wizard step number (1-7, excluding 'welcome')
+const SETUP_STEP_OF = { about:1, business:2, compliance:3, leadership:4, decisions:5, communication:6, meetingtypes:7 };
+const STEP_KEY_OF = ['about','business','compliance','leadership','decisions','communication','meetingtypes'];
+
+function renderTopTabsHtml(activeKey){
+  return `<div class="top-tabs-scroll">` + TOP_TABS.map((t,i)=>`
+    <button class="top-tab-btn${t.k===activeKey?' active':''}" onclick="goToSection('${t.k}')">
+      ${i>0?`<span class="num">${i}</span>`:''}${t.icon} ${t.label}
+    </button>`).join('') + `</div>
+  <button class="contact-us-btn" onclick="openContactUs()">📞 Contact Us</button>`;
+}
+function renderAllTopTabs(){
+  const active = S.topActiveKey || 'welcome';
+  const html = renderTopTabsHtml(active);
+  ['welcomeTopTabs','setupTopTabs','appTopTabs'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.innerHTML = html;
+  });
+  const flagEl = document.getElementById('flagCardIcon');
+  if(flagEl) flagEl.textContent = COUNTRY.flag;
+}
+// Jump directly to any section, from ANY screen, regardless of setup completeness
+function goToSection(key){
+  S.topActiveKey = key;
+  if(key==='welcome'){
+    if(!S.launched){ show('welcome'); renderAllTopTabs(); }
+    else { switchTab('home'); }
+    return;
+  }
+  if(!S.launched){
+    show('setup');
+    S.step = SETUP_STEP_OF[key] || 1;
+    renderStep();
+    renderAllTopTabs();
+    document.getElementById('setup').scrollTop = 0;
+    return;
+  }
+  // Already launched — jump straight into the relevant working area
+  if(key==='meetingtypes'){ switchTab('board'); return; }
+  if(key==='communication'){ switchTab('more'); setTimeout(()=>{document.getElementById('commsAnchor')?.scrollIntoView({behavior:'smooth'});},60); return; }
+  // about / business / compliance / leadership / decisions -> editable config view inside the app
+  S.appConfigKey = key;
+  S.tab = 'config';
+  document.querySelectorAll('.nav-tab').forEach(b=>b.classList.remove('active'));
+  renderTab();
+  renderAllTopTabs();
+  document.getElementById('tabContent').scrollTop = 0;
+}
+
+// ═══════════════════════════════════════════
+// DATA CONSTANTS
+// ═══════════════════════════════════════════
+
+/* MyBizExco Application */
+
+
+
+
+
+
+// React removed - vanilla JS
+
+// ── SECTOR DATA ──
+const INDS = {
+  spaza: {
+    reg: "SARS/Municipal/CIPC",
+    fw: ["Consumer Protection Act", "SARS Turnover Tax", "Municipal By-laws", "POPIA", "B-BBEE Act"],
+    ctx: "Spaza shops & general dealers. SARS turnover tax for small traders."
+  },
+  food: {
+    reg: "Dept Health/Municipal",
+    fw: ["Foodstuffs Act", "Health Act 61/2003", "Consumer Protection Act", "Liquor Act", "POPIA"],
+    ctx: "Restaurants, taverns, catering. Certificate of Acceptability from municipality."
+  },
+  transport: {
+    reg: "NPTR/RTMC/DoT",
+    fw: ["NLTA 5/2009", "NPTR Regulations", "Road Traffic Act", "PRDP", "POPIA"],
+    ctx: "Taxis, couriers, freight. Operating licence from NPTR required."
+  },
+  construction: {
+    reg: "CIDB/Dept Labour/NHBRC",
+    fw: ["CIDB Act", "OHS Act 85/1993", "NHBRC Act", "Construction Regs 2014", "B-BBEE Act"],
+    ctx: "Builders, plumbers, electricians. CIDB grading determines tender eligibility."
+  },
+  beauty: {
+    reg: "Dept Health/Municipal",
+    fw: ["Health Act", "Municipal By-laws", "Consumer Protection Act", "POPIA", "B-BBEE Act"],
+    ctx: "Salons, barbers, spas, fitness. Health certificate from municipality required."
+  },
+  cleaning: {
+    reg: "Dept Labour/CIPC",
+    fw: ["Labour Relations Act", "BCEA", "OHS Act", "B-BBEE Act", "POPIA"],
+    ctx: "Cleaning & facilities. B-BBEE scorecard for government tenders."
+  },
+  technology: {
+    reg: "Information Regulator/ICASA",
+    fw: ["POPIA", "Electronic Comms Act", "Cybercrimes Act", "Consumer Protection Act", "B-BBEE Act"],
+    ctx: "Software, IT, digital marketing. POPIA registration required if processing personal data."
+  },
+  healthcare: {
+    reg: "HPCSA/DoH/SANC",
+    fw: ["Health Professions Act", "National Health Act", "Medical Schemes Act", "POPIA", "Children's Act"],
+    ctx: "Clinics, pharmacies, childcare. HPCSA registration for health professionals."
+  },
+  education: {
+    reg: "DBE/DHET/SAQA",
+    fw: ["SASA 84/1996", "ETQA Regulations", "NQF Act", "Children's Act", "POPIA"],
+    ctx: "Tutoring, training, ECD centres. SETA accreditation for formal training providers."
+  },
+  financial: {
+    reg: "FSCA/SARB/NCR",
+    fw: ["FAIS Act", "FICA", "POPIA", "NCA", "Insurance Act 18/2017", "COFI Bill", "TCF"],
+    ctx: "Insurance, credit, fintech, accounting. FSCA licence required. NCR for credit providers."
+  },
+  property: {
+    reg: "PPRA/CIPC",
+    fw: ["Property Practitioners Act", "FICA", "POPIA", "Sectional Titles Act", "Consumer Protection Act"],
+    ctx: "Estate agents, rentals, developments. FFC required from PPRA to practice."
+  },
+  manufacturing: {
+    reg: "Dept Trade & Industry/NRCS",
+    fw: ["NRCS Act", "OHS Act", "NEMA", "B-BBEE Act", "Labour Relations Act"],
+    ctx: "Light manufacturing, clothing, printing. NRCS compulsory specifications apply."
+  },
+  agriculture: {
+    reg: "DALRRD/DAFF/SARS",
+    fw: ["Conservation of Agri Resources Act", "Foodstuffs Act", "OHS Act", "B-BBEE Act", "Land Reform Acts"],
+    ctx: "Farming, nurseries, agri-processing. Export certification from DAFF required."
+  },
+  creative: {
+    reg: "CIPC/CIPRO/DAC",
+    fw: ["Copyright Act", "Trade Marks Act", "Consumer Protection Act", "POPIA", "B-BBEE Act"],
+    ctx: "Design, photography, events, music. Copyright vests automatically. SAMRO for music royalties."
+  },
+  professional: {
+    reg: "Statutory Body/CIPC",
+    fw: ["Companies Act", "POPIA", "Consumer Protection Act", "B-BBEE Act", "Labour Relations Act"],
+    ctx: "Legal, consulting, HR, engineering. Regulated by professional statutory bodies."
+  },
+  insurance: {
+    reg: "FSCA/Prudential Authority",
+    fw: ["FAIS Act", "TCF", "POPIA", "FICA", "Insurance Act 18/2017", "IFRS 17", "SAM", "COFI Bill"],
+    ctx: "Short & long-term insurers, cell captives. FSCA licences required. SAM for capital."
+  },
+  other: {
+    reg: "CIPC/SARS",
+    fw: ["POPIA", "Companies Act", "Labour Relations Act", "B-BBEE Act", "Consumer Protection Act"],
+    ctx: "General SA business compliance. CIPC annual returns and SARS registration required."
+  }
+};
+const IND_LIST = ["spaza", "food", "transport", "construction", "beauty", "cleaning", "technology", "healthcare", "education", "financial", "property", "manufacturing", "agriculture", "creative", "professional", "insurance", "other"];
+const IND_META = {
+  spaza: {
+    icon: "🏪",
+    label: "Spaza/Retail"
+  },
+  food: {
+    icon: "🍖",
+    label: "Food & Hospitality"
+  },
+  transport: {
+    icon: "🚗",
+    label: "Transport & Logistics"
+  },
+  construction: {
+    icon: "🏗",
+    label: "Construction"
+  },
+  beauty: {
+    icon: "💇",
+    label: "Beauty & Wellness"
+  },
+  cleaning: {
+    icon: "🧺",
+    label: "Cleaning & Facilities"
+  },
+  technology: {
+    icon: "💻",
+    label: "Technology"
+  },
+  healthcare: {
+    icon: "🏥",
+    label: "Healthcare"
+  },
+  education: {
+    icon: "🎓",
+    label: "Education & Training"
+  },
+  financial: {
+    icon: "🏦",
+    label: "Financial Services"
+  },
+  property: {
+    icon: "🏢",
+    label: "Property"
+  },
+  manufacturing: {
+    icon: "⚙️",
+    label: "Manufacturing"
+  },
+  agriculture: {
+    icon: "🌱",
+    label: "Agriculture"
+  },
+  creative: {
+    icon: "🎨",
+    label: "Creative & Media"
+  },
+  professional: {
+    icon: "⚖️",
+    label: "Professional Services"
+  },
+  insurance: {
+    icon: "🛡️",
+    label: "Insurance & Fintech"
+  },
+  other: {
+    icon: "🌐",
+    label: "Other/Mixed"
+  }
+};
+
+// ── MEETING TYPES ──
+const A = "#F59E0B";
+const MT = {
+  board: {
+    label: "Board Meeting",
+    icon: "🏛",
+    act: "Companies Act s73",
+    freq: "Quarterly"
+  },
+  exco: {
+    label: "Exco Meeting",
+    icon: "⚡",
+    act: "Internal governance",
+    freq: "Monthly"
+  },
+  agm: {
+    label: "Annual General Meeting",
+    icon: "📅",
+    act: "Companies Act s61",
+    freq: "Annual"
+  },
+  special: {
+    label: "Special Board Meeting",
+    icon: "🚨",
+    act: "Companies Act s73",
+    freq: "Ad hoc"
+  },
+  coffee: {
+    label: "Coffee Exco",
+    icon: "☕",
+    act: "Informal — recorded for audit",
+    freq: "As needed"
+  },
+  shareholder: {
+    label: "Shareholder Meeting",
+    icon: "📊",
+    act: "Companies Act s61",
+    freq: "Annual"
+  },
+  subcom: {
+    label: "Board Subcommittee",
+    icon: "🧩",
+    act: "Delegated board authority",
+    freq: "As scheduled"
+  },
+  mgmt: {
+    label: "Management Meeting",
+    icon: "👥",
+    act: "Internal operations",
+    freq: "Weekly/Monthly"
+  }
+};
+
+// ── EXCO ──
+const EXCO = [{
+  id: "dceo",
+  role: "Dep. CEO",
+  focus: "Strategy & leadership",
+  color: "#7C3AED",
+  bg: "#f5f3ff"
+}, {
+  id: "cfo",
+  role: "CFO",
+  focus: "Capital & financial risk",
+  color: "#059669",
+  bg: "#d1fae5"
+}, {
+  id: "coo",
+  role: "COO",
+  focus: "Execution & operations",
+  color: "#2563EB",
+  bg: "#dbeafe"
+}, {
+  id: "cro",
+  role: "CRO",
+  focus: "Risk & compliance",
+  color: "#DC2626",
+  bg: "#fee2e2"
+}, {
+  id: "chro",
+  role: "CHRO",
+  focus: "Culture & talent",
+  color: "#D97706",
+  bg: "#fef3c7"
+}, {
+  id: "cto",
+  role: "CTO",
+  focus: "Technology & innovation",
+  color: "#0891B2",
+  bg: "#cffafe"
+}];
+
+// ── BENCHMARKS ──
+const BM = {
+  startup: {
+    board: "Quarterly",
+    exco: "Monthly",
+    audit: "Not required",
+    cosec: "Optional",
+    tip: "Focus on regular Exco meetings, basic financial controls, and CIPC compliance."
+  },
+  sme: {
+    board: "Quarterly",
+    exco: "Monthly",
+    audit: "Not required",
+    cosec: "Recommended",
+    tip: "Formalise your board with an independent director, company secretary, and documented policies."
+  },
+  midmarket: {
+    board: "Quarterly",
+    exco: "Bi-weekly",
+    audit: "Required",
+    cosec: "Required",
+    tip: "Full governance framework required. Audit and risk committees recommended."
+  },
+  enterprise: {
+    board: "Monthly",
+    exco: "Weekly",
+    audit: "Required",
+    cosec: "Required",
+    tip: "Listed-company standards. King IV compliance and integrated reporting required."
+  }
+};
+
+// ── CIPC FILINGS ──
+const CIPC = [{
+  name: "Annual Return",
+  due: "Within 30 business days of anniversary",
+  act: "s33",
+  form: "CoR30.2"
+}, {
+  name: "Change of Directors",
+  due: "Within 10 business days of change",
+  act: "s24",
+  form: "CoR39"
+}, {
+  name: "Change of Address",
+  due: "Within 10 business days of change",
+  act: "s23",
+  form: "CoR21.1"
+}, {
+  name: "MOI Amendment",
+  due: "Within 10 business days",
+  act: "s16",
+  form: "CoR15.3"
+}, {
+  name: "Share Issuance",
+  due: "Within 10 business days",
+  act: "s50",
+  form: "CoR9.4"
+}, {
+  name: "Audited AFS",
+  due: "Within 6 months of year end",
+  act: "s30",
+  form: "N/A"
+}];
+
+// ── MEETING TEMPLATES ──
+const MT_TMPLS = {
+  board: {
+    name: "Standard Board Meeting",
+    items: ["Welcome and confirmation of quorum", "Apologies for absence", "Conflict of interest declarations", "Confirmation of previous board minutes", "Matters arising", "CEO report — strategic overview", "Financial performance review", "Risk register review", "Strategic initiative updates", "Compliance and regulatory update", "Capital allocation decisions", "Human resources matters", "Approval of resolutions", "Any other business", "Date of next meeting", "Closure"]
+  },
+  exco: {
+    name: "Standard Exco Meeting",
+    items: ["Welcome and confirmation of quorum", "Apologies for absence", "Conflict of interest declarations", "Confirmation of previous Exco minutes", "Matters arising", "Operational performance dashboard", "Department heads update", "Customer and stakeholder matters", "Pipeline and revenue update", "People and culture update", "Risk and compliance matters", "Key decisions for approval", "Action register review", "Any other business", "Date of next meeting", "Closure"]
+  },
+  agm: {
+    name: "Annual General Meeting",
+    items: ["Welcome and confirmation of quorum", "Apologies for absence", "Notice confirmed as properly given", "Adoption of agenda", "Presentation of audited annual financial statements", "Directors report", "Appointment/re-election of directors", "Appointment of auditors", "Declaration of dividends (if applicable)", "Approval of directors remuneration", "Special resolutions", "Shareholders questions", "Date of next AGM", "Closure"]
+  },
+  special: {
+    name: "Special Board Meeting",
+    items: ["Welcome and confirmation of quorum", "Apologies for absence", "Conflict of interest declarations", "Purpose and urgency — noted", "Background and context", "Presentation of urgent matter", "Board deliberation", "Formal resolution", "Responsible party and timeline", "Communication plan", "Closure"]
+  }
+};
+
+// ── DIST LISTS & WA DEFAULTS (order: Shareholders, Board, Exco/C-Suite, Management, All staff, Other) ──
+const DL_DEF = {
+  distShareholders: {
+    emails: "",
+    active: false,
+    label: "Shareholders",
+    desc: "Shareholder report & AGM notices",
+    role: "To",
+    icon: "📊"
+  },
+  distBoard: {
+    emails: "",
+    active: true,
+    label: "Board members",
+    desc: "Minutes & resolutions",
+    role: "To",
+    icon: "🏛"
+  },
+  distExco: {
+    emails: "",
+    active: true,
+    label: "Exco / C-Suite",
+    desc: "Exco minutes & decisions",
+    role: "To",
+    icon: "⚡"
+  },
+  distManagement: {
+    emails: "",
+    active: true,
+    label: "Management team",
+    desc: "Action list",
+    role: "CC",
+    icon: "👥"
+  },
+  distStaff: {
+    emails: "",
+    active: false,
+    label: "All staff",
+    desc: "Announcements",
+    role: "BCC",
+    icon: "👤"
+  }
+};
+const WA_DEF = [{
+  id: "wa_csuite",
+  name: "C-Suite",
+  numbers: "",
+  active: true,
+  icon: "👔"
+}, {
+  id: "wa_mgmt",
+  name: "Management",
+  numbers: "",
+  active: true,
+  icon: "👥"
+}, {
+  id: "wa_staff",
+  name: "All Staff",
+  numbers: "",
+  active: false,
+  icon: "👤"
+}];
+
+// ── UTILS ──
+const wait = ms => new Promise(r => setTimeout(r, ms));
+const uid = () => Math.random().toString(36).slice(2, 9);
+const today = () => {
+  const d = new Date();
+  return d.getDate() + " " + ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][d.getMonth()] + " " + d.getFullYear();
+};
+const nowTime = () => {
+  const d = new Date();
+  return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+};
+
+// ── GOVERNANCE SCORE ──
+function govScore(sessions, resolutions, allActions, P) {
+  let sc = 0;
+  sc += Math.min(sessions.filter(s => s.meetingType === "board").length * 10, 25);
+  sc += Math.min(sessions.filter(s => s.meetingType === "exco").length * 5, 20);
+  sc += sessions.some(s => s.meetingType === "agm" || s.meetingType === "shareholder") ? 15 : 0;
+  sc += resolutions.length > 0 ? 10 : 0;
+  const tot = allActions.length,
+    cl = allActions.filter(a => a.status === "Closed").length;
+  sc += tot > 0 ? Math.round(cl / tot * 20) : 0;
+  sc += P?.regNo ? 5 : 0;
+  sc += P?.incorporationDate ? 5 : 0;
+  return Math.min(sc, 100);
+}
+
+// Same inputs, broken into the individual line items — powers the "what's behind this score" panel
+function govScoreBreakdown(sessions, resolutions, allActions, P) {
+  const boardCount = sessions.filter(s => s.meetingType === "board").length;
+  const excoCount = sessions.filter(s => s.meetingType === "exco").length;
+  const hasShareholder = sessions.some(s => s.meetingType === "agm" || s.meetingType === "shareholder");
+  const hasResolution = resolutions.length > 0;
+  const tot = allActions.length;
+  const cl = allActions.filter(a => a.status === "Closed").length;
+  const actionsPts = tot > 0 ? Math.round(cl / tot * 20) : 0;
+  const items = [
+    { label: "Board meetings held", detail: boardCount + " held", pts: Math.min(boardCount * 10, 25), max: 25, met: boardCount > 0 },
+    { label: "Exco meetings held", detail: excoCount + " held", pts: Math.min(excoCount * 5, 20), max: 20, met: excoCount > 0 },
+    { label: "Shareholder meeting held", detail: hasShareholder ? "Yes" : "Not yet", pts: hasShareholder ? 15 : 0, max: 15, met: hasShareholder },
+    { label: "A resolution passed", detail: hasResolution ? "Yes" : "Not yet", pts: hasResolution ? 10 : 0, max: 10, met: hasResolution },
+    { label: "Action items closed out", detail: tot > 0 ? cl + " of " + tot + " closed" : "No actions yet", pts: actionsPts, max: 20, met: actionsPts > 0 },
+    { label: "CIPC registration number added", detail: P?.regNo ? "Added" : "Missing", pts: P?.regNo ? 5 : 0, max: 5, met: !!P?.regNo },
+    { label: "Incorporation date added", detail: P?.incorporationDate ? "Added" : "Missing", pts: P?.incorporationDate ? 5 : 0, max: 5, met: !!P?.incorporationDate }
+  ];
+  const total = Math.min(items.reduce((s, i) => s + i.pts, 0), 100);
+  return { items, total };
+}
+
+// ── AGENDA BUILDER ──
+function buildAgenda(sessions, allActions, govRem, meetingType) {
+  const items = [];
+  const add = (text, type = "standing") => items.push({
+    id: uid(),
+    text,
+    type,
+    checked: false
+  });
+  add("Welcome and confirmation of quorum");
+  add("Apologies for absence");
+  add("Conflict of interest declarations");
+  if (sessions.length > 0) {
+    add("Confirmation of previous meeting minutes");
+    add("Matters arising from previous minutes");
+  }
+  allActions.filter(a => a.status === "Open").slice(0, 3).forEach(a => add("Action follow-up: " + a.action + " (" + a.owner + ")", "action"));
+  if (govRem.some(r => r.urgent)) add("⚠ Urgent governance deadline: " + govRem.find(r => r.urgent).label, "governance");
+  if (meetingType === "board" || meetingType === "special" || meetingType === "subcom") {
+    add("CEO report — strategic overview");
+    add("Financial performance review");
+    add("Risk register review");
+    add("Approval of resolutions");
+  } else if (meetingType === "agm" || meetingType === "shareholder") {
+    add("Presentation of audited annual financial statements");
+    add("Director elections and appointments");
+    add("Appointment of auditors");
+    add("Shareholder questions and general business");
+  } else {
+    add("Operational performance dashboard");
+    add("Department heads update");
+    add("Key decisions for approval");
+    add("Action register review");
+  }
+  add("Any other business");
+  add("Date of next meeting");
+  add("Closure");
+  return items;
+}
+
+// ── AI ANALYSIS ──
+const API_URL = "https://api.anthropic.com/v1/messages";
+async function callAPI(prompt, max = 400) {
+  const r = await fetch(API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-6",
+      max_tokens: max,
+      messages: [{
+        role: "user",
+        content: prompt
+      }]
+    })
+  });
+  const d = await r.json();
+  return d.content?.[0]?.text || "";
+}
+function detPrompt(role, focus, item, P, fw, meetingContext) {
+  return "You are the " + role + " (" + focus + ") of " + P.nm + " in the " + P.ind + " sector in South Africa. Analyse this agenda item for the board: \"" + item + "\"\n\nApplicable SA frameworks: " + fw.slice(0, 4).join(", ") + ". Company: " + P.sz + " business, " + P.cty + ". CEO priorities: " + P.prio + ". Financial context: " + P.fin + (meetingContext ? ". Immediate issue to resolve in this meeting: " + meetingContext : "") + ".\n\nRespond ONLY as valid JSON with NO markdown:\n{\"verdict\":\"support|caution|oppose\",\"reason\":\"one sentence\",\"analysis\":\"2-3 sentences in first person\"}";
+}
+function synPrompt(item, results, P, fw) {
+  const votes = results.filter(r => r.verdict === "support").length;
+  return "You are the board chair of " + P.nm + ". " + votes + " of " + results.length + " Exco members support this item: \"" + item + "\". Frameworks: " + fw.slice(0, 3).join(", ") + ".\n\nRespond ONLY as valid JSON with NO markdown:\n{\"synthesis\":\"2 sentences\",\"recommendation\":\"1 sentence\",\"risks\":[\"risk1\",\"risk2\",\"risk3\"],\"next_steps\":[\"step1\",\"step2\",\"step3\"],\"commsNeeded\":true,\"comms\":\"short staff email\"}";
+}
+function evalQuorum(results, P) {
+  const sup = results.filter(r => r.verdict === "support").length;
+  const opp = results.filter(r => r.verdict === "oppose").length;
+  const q = P.quorum || {};
+  if (q.cfoVeto && results.find(r => r.id === "cfo" && r.verdict === "oppose")) return {
+    pass: false,
+    reason: "CFO veto"
+  };
+  if (q.croVeto && results.find(r => r.id === "cro" && r.verdict === "oppose")) return {
+    pass: false,
+    reason: "CRO veto"
+  };
+  if (q.ctoVeto && results.find(r => r.id === "cto" && r.verdict === "oppose")) return {
+    pass: false,
+    reason: "CTO veto"
+  };
+  if (q.majority && sup < 4) return {
+    pass: false,
+    reason: "Insufficient majority (" + sup + "/" + results.length + ")"
+  };
+  if (opp >= 4) return {
+    pass: false,
+    reason: "Strong opposition (" + opp + " oppose)"
+  };
+  return {
+    pass: true,
+    reason: sup + " of " + results.length + " support"
+  };
+}
+function deterministicAnalysis(role, id, focus, item) {
+  const h = Array.from(item + role).reduce((a, c) => (a << 5) - a + c.charCodeAt(0), 0);
+  const v = ["support", "caution", "oppose"][Math.abs(h) % 3];
+  return {
+    id,
+    role,
+    focus,
+    verdict: v,
+    reason: v === "support" ? "This initiative aligns with our strategic objectives." : v === "caution" ? "This proposal requires careful risk assessment before proceeding." : "I have significant concerns about the risks involved.",
+    analysis: "As " + role + ", I have reviewed this matter carefully in the context of our regulatory obligations. The proposal has merit but requires thorough due diligence. We should ensure full compliance with applicable frameworks before proceeding."
+  };
+}
+
+// ── NOTICE GENERATOR ──
+function genNotice(P, meetingType, items, venue, ds, ts, ref) {
+  const mt = MT[meetingType] || MT.exco;
+  const agenda = (items || []).map((it, i) => i + 1 + ". " + (typeof it === "string" ? it : it.text)).join("\n");
+  return "NOTICE OF " + mt.label.toUpperCase() + "\n\n" + P.nm + " | Reg No: " + (P.regNo || "TBC") + "\n\nTO: All Directors and Exco Members\nFROM: " + (P.ceoName || "CEO") + "\nDATE OF NOTICE: " + today() + " | REF: " + (ref || "MTG-" + today()) + "\n\nNotice is given of a " + mt.label + " to be held:\nDATE: " + (ds || "TBC") + " | TIME: " + (ts || "TBC") + " | VENUE: " + (venue || "TBC") + "\n\n" + (P.quorum?.majority ? "Quorum: 4 of 6 members required." : "All members should attend.") + "\n\nAGENDA\n" + agenda + "\n\nBoard pack to be circulated 2 business days prior. Please confirm attendance.\n\n" + "─".repeat(28) + "\n" + (P.ceoName || "CEO") + " | " + P.nm + " | " + today() + "\nGenerated by MyBizExco. Issued in terms of " + mt.act + ".";
+}
+
+// ── QUORUM CHECK ──
+function chkQ(att, items, quorum) {
+  const w = [];
+  if (quorum?.majority && att.filter(a => a.present).length < 4) w.push("Only " + att.filter(a => a.present).length + " members present — 4 required");
+  const u = items.filter(i => !i.rs?.length && !["standing", "action", "governance"].includes(i.type));
+  if (u.length) w.push(u.length + " item" + (u.length > 1 ? "s" : "") + " not deliberated");
+  return w;
+}
+
+// ── DOCUMENT BUILDERS ──
+function printDoc(title, body) {
+  const w = window.open("", "_blank");
+  if (!w) return;
+  w.document.write("<html><head><title>" + title + "</title><style>body{font-family:Georgia,serif;max-width:700px;margin:32px auto;padding:0 20px;line-height:1.65;color:#111;font-size:12px}h1,h2{color:#111}@media print{body{margin:0}}</style></head><body>" + body + "</body></html>");
+  w.document.close();
+  w.print();
+}
+function buildMins(session, exco, P) {
+  const mt = MT[session.meetingType] || MT.exco;
+  const fw = INDS[session.ind || P.ind]?.fw || P.fw || [];
+  let html = "<h1>" + session.co + "</h1><h2>" + mt.label + " \u2014 " + (session.meetingType==="coffee" ? "INFORMAL NOTES (Audit Record)" : "MINUTES") + "</h2>" + (session.meetingType==="coffee" && session.meetingContext ? "<p><b>Problem addressed:</b> " + session.meetingContext + "</p>" : "") + "<p><b>Ref:</b> " + session.ref + " | <b>Date:</b> " + session.date + " | <b>Time:</b> " + session.time + (session.financials?.revenue ? " | <b>Revenue:</b> " + session.financials.revenue : "") + "</p><p><b>Regulator:</b> " + (INDS[session.ind || P.ind]?.reg || "CIPC") + " | <b>Frameworks:</b> " + fw.slice(0, 4).join(", ") + "</p><h3>Attendance</h3><ul>" + (session.attendees || []).map(a => "<li>" + a.role + " — " + (a.dn || a.role) + " — " + (a.present ? "PRESENT" : "APOLOGY") + "</li>").join("") + "</ul><h3>Agenda & Deliberations</h3>" + (session.agendaItems || []).map((item, i) => {
+    let s = "<div style='margin-bottom:18px'><b>" + (i + 1) + ". " + item.text + "</b>";
+    if (item.rs?.length) {
+      s += "<ul>" + item.rs.map(r => "<li>" + r.role + ": <b>" + r.verdict.toUpperCase() + "</b> — " + r.analysis + "</li>").join("") + "</ul>";
+      if (item.qr) {
+        s += "<p><b>Result: " + (!item.qr.pass ? "RESOLUTION FAILED" : "RESOLUTION PASSED") + " — " + item.qr.reason + "</b></p>";
+      }
+      if (item.syn) {
+        s += "<p><b>Synthesis:</b> " + item.syn.synthesis + "</p><p><b>Recommendation:</b> " + item.syn.recommendation + "</p>";
+      }
+    }
+    if (item.ceoNote) s += "<p><i>CEO note: " + item.ceoNote + "</i></p>";
+    return s + "</div>";
+  }).join("") + "<h3>Actions Arising</h3><table border='1' cellpadding='6' style='width:100%;border-collapse:collapse'><tr><th>Action</th><th>Owner</th><th>Due</th><th>Priority</th></tr>" + (session.agendaItems || []).flatMap(i => i.syn?.next_steps?.map(n => "<tr><td>" + n + "</td><td></td><td></td><td></td></tr>") || []).join("") + "</table><h3>Signature</h3><p>Chairperson: _________________ &nbsp;&nbsp; Date: _____________</p><p><i>These minutes were recorded in terms of " + mt.act + ". Generated by MyBizExco.</i></p>";
+  return html;
+}
+function genShareholder(session) {
+  const mt = MT[session.meetingType] || MT.exco;
+  const passed = session.agendaItems?.filter(i => i.qr?.pass) || [];
+  const failed = session.agendaItems?.filter(i => i.qr && !i.qr.pass) || [];
+  return "<h1>Shareholder Update</h1><h2>" + session.co + " — " + mt.label + "</h2><p><b>Date:</b> " + session.date + " | <b>Ref:</b> " + session.ref + "</p><h3>Summary</h3><p>" + passed.length + " resolutions passed · " + failed.length + " matters not approved · " + (session.agendaItems?.length || 0) + " total agenda items</p><h3>Key Decisions</h3><ul>" + passed.map(i => "<li><b>RESOLVED:</b> " + i.text + (i.syn?.recommendation ? " — " + i.syn.recommendation : "") + "</li>").join("") + "</ul>" + (failed.length ? "<h3>Matters Not Approved</h3><ul>" + failed.map(i => "<li>" + i.text + " (" + i.qr?.reason + ")</li>").join("") + "</ul>" : "") + (session.financials?.revenue ? "<h3>Financials</h3><p>Revenue: " + session.financials.revenue + " | Expenses: " + session.financials.expenses + "</p>" : "") + "<p><i>" + session.co + " | Generated by MyBizExco | " + today() + "</i></p>";
+}
+
+// ── GOVERNANCE CALENDAR ──
+function calcGovRem(profile) {
+  if (!profile?.incorporationDate) return [];
+  const rem = [];
+  const now = new Date();
+  try {
+    const incDate = new Date(profile.incorporationDate);
+    if (isNaN(incDate)) return [];
+    const addRem = (label, icon, dueDate) => {
+      const days = Math.round((dueDate - now) / (1000 * 60 * 60 * 24));
+      rem.push({
+        label,
+        icon,
+        due: dueDate.toLocaleDateString("en-ZA", {
+          day: "numeric",
+          month: "short",
+          year: "numeric"
+        }),
+        days,
+        urgent: days <= 14 && days >= 0
+      });
+    };
+    const nextAGM = new Date(incDate);
+    nextAGM.setMonth(nextAGM.getMonth() + 15);
+    while (nextAGM < now) nextAGM.setFullYear(nextAGM.getFullYear() + 1);
+    addRem("Annual General Meeting", "📅", nextAGM);
+    [3, 6, 9, 12].forEach(m => {
+      const d = new Date(incDate);
+      d.setMonth(d.getMonth() + m);
+      while (d < now) d.setFullYear(d.getFullYear() + 1);
+      if (Math.round((d - now) / (1000 * 60 * 60 * 24)) <= 90) addRem("Quarterly Board Meeting (Q" + Math.ceil(m / 3) + ")", "🏛", d);
+    });
+    const taxDue = new Date(now.getFullYear(), 10, 30);
+    if (taxDue < now) taxDue.setFullYear(taxDue.getFullYear() + 1);
+    addRem("Income Tax Return", "💰", taxDue);
+  } catch (e) {}
+  return rem.filter(r => r.days >= 0 && r.days <= 120).sort((a, b) => a.days - b.days);
+}
+
+// ── REACT STYLES (unused in vanilla) ──
+const REACT_S = {
+  card: {
+    background: "#fff",
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 12,
+    boxShadow: "0 1px 4px rgba(0,0,0,.06)"
+  },
+  btn: {
+    width: "100%",
+    background: A,
+    color: "#000",
+    border: "none",
+    borderRadius: 12,
+    padding: "14px 0",
+    fontSize: 15,
+    fontWeight: 700,
+    cursor: "pointer",
+    fontFamily: "inherit",
+    marginTop: 12
+  },
+  sbtn: {
+    border: "1px solid #e0e0e0",
+    borderRadius: 8,
+    padding: "10px 14px",
+    fontSize: 13,
+    color: "#555",
+    background: "#fff",
+    cursor: "pointer",
+    fontFamily: "inherit"
+  },
+  inp: {
+    width: "100%",
+    padding: "12px 14px",
+    border: "1px solid #e0e0e0",
+    borderRadius: 10,
+    fontSize: 14,
+    outline: "none",
+    background: "#fff",
+    boxSizing: "border-box",
+    fontFamily: "inherit"
+  },
+  lbl: {
+    fontSize: 11,
+    fontWeight: 700,
+    color: "#999",
+    textTransform: "uppercase",
+    letterSpacing: ".06em",
+    display: "block",
+    marginBottom: 5
+  },
+  sh: {
+    fontSize: 11,
+    fontWeight: 700,
+    color: "#bbb",
+    textTransform: "uppercase",
+    letterSpacing: ".1em",
+    marginBottom: 10,
+    display: "block"
+  },
+  tag: col => ({
+    fontSize: 10,
+    padding: "2px 8px",
+    borderRadius: 4,
+    fontWeight: 700,
+    background: col + "22",
+    color: col
+  })
+};
+// (dead React components removed)
+
+let S = {
+  step: 1,
+  launched: false,
+  topActiveKey: 'welcome',
+  appConfigKey: null,
+  profile: null,
+  exco: EXCO.map(e=>({...e,dn:''})),
+  sessions: [],
+  allActions: [],
+  resolutions: [],
+  documents: [],
+  fwSummaries: {},
+  customDistLists: [],
+  commsItems: [],
+  distLists: JSON.parse(JSON.stringify(DL_DEF)),
+  waGroups: JSON.parse(JSON.stringify(WA_DEF)),
+  conflictReg: [],
+  savedTmpls: [],
+  leadershipLog: [],
+  // setup form
+  nm:'', ceoName:'', regNo:'', incDate:'', sz:'sme', cty:'Gauteng',
+  rev:'', prioList:['','',''], fin:'', ar:'', ind:'insurance',
+  quorum:{cfoVeto:true,croVeto:true,ctoVeto:false,majority:true},
+  emailInputs:{}, numInputs:{}, newWaName:'',
+  defaultMeetingType:'board', subcomName:'',
+  // meeting
+  sessionOpen:false, activeSession:null, agendaItems:[], attendees:[],
+  meetingType:'board', meetingContext:'', financials:{revenue:'',expenses:''},
+  pendingDocs:[], tab:'home', voiceOn:false, sessRef:0,
+  govRem:[], showSupport:false
+};
+
+// ═══════════════════════════════════════════
+// UTILITY
+// ═══════════════════════════════════════════
+// uid defined in data section
+// today defined in data section
+// nowTime defined in data section
+function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+function openModal(html){
+  document.getElementById('modalBox').innerHTML=html;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function closeModal(e){
+  if(!e||e.target===document.getElementById('modalOverlay'))
+    document.getElementById('modalOverlay').classList.remove('open');
+}
+
+// ═══════════════════════════════════════════
+// SCREENS
+// ═══════════════════════════════════════════
+function show(id){
+  ['welcome','setup','app'].forEach(s=>{
+    const el=document.getElementById(s);
+    el.classList.remove('active');
+  });
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+  document.getElementById(id).scrollTop=0;
+  if(id==='welcome') S.topActiveKey='welcome';
+  renderAllTopTabs();
+}
+
+function startSetup(){S.step=1;S.topActiveKey='about';show('setup');renderStep();}
+
+// ═══════════════════════════════════════════
+// SETUP WIZARD
+// ═══════════════════════════════════════════
+const PROVINCES=['Gauteng','Western Cape','KwaZulu-Natal','Eastern Cape','Limpopo','Mpumalanga','North West','Free State','Northern Cape'];
+const SIZES=[{v:'micro',l:'Micro (1–10 staff)'},{v:'sme',l:'Small (11–50 staff)'},{v:'medium',l:'Medium (51–250 staff)'},{v:'large',l:'Large (250+ staff)'}];
+const DECISION_RULES=[
+  {k:'cfoVeto',icon:'💰',label:'CFO Veto Gate',body:'If the CFO votes OPPOSE, the resolution fails regardless of other votes. Protects against financially risky decisions.'},
+  {k:'croVeto',icon:'⚠️',label:'CRO Veto Gate',body:'If the CRO votes OPPOSE, the resolution fails. Protects against compliance and regulatory risk.'},
+  {k:'ctoVeto',icon:'💻',label:'CTO Veto Gate',body:'If the CTO votes OPPOSE, the resolution fails. Protects against technology risks.'},
+  {k:'majority',icon:'🗳️',label:'Majority Rule (4 of 6)',body:'At least 4 of 6 Exco members must vote SUPPORT for a resolution to pass. Standard democratic board governance.'},
+];
+const STEP_LABELS=['About MyBizExco','About Your Business','Compliance & Legal','Leadership Team','Decision Needed','Communication','Meeting Types'];
+const TOTAL_STEPS=STEP_LABELS.length;
+
+function setStep(n){
+  S.step=n;
+  S.topActiveKey=STEP_KEY_OF[n-1]||'about';
+  const pct=n/TOTAL_STEPS*100;
+  document.getElementById('progressBar').style.width=pct+'%';
+  document.getElementById('stepLabel').textContent='Step '+n+' of '+TOTAL_STEPS+' — '+STEP_LABELS[n-1];
+  renderStep();
+  renderAllTopTabs();
+  const body=document.getElementById('setup');
+  body.scrollTop=0;
+}
+
+function renderStep(){
+  const body=document.getElementById('setupBody');
+  S.topActiveKey=STEP_KEY_OF[S.step-1]||'about';
+  if(S.step===1) body.innerHTML=renderStepAbout();
+  else if(S.step===2) body.innerHTML=renderStep1();
+  else if(S.step===3) body.innerHTML=renderStepCompliance();
+  else if(S.step===4) body.innerHTML=renderStep3();
+  else if(S.step===5) body.innerHTML=renderStep4();
+  else if(S.step===6) body.innerHTML=renderStepCommunication();
+  else body.innerHTML=renderStepMeetingTypes();
+  renderAllTopTabs();
+}
+
+// ═══ STEP 1: ABOUT MYBIZEXCO ═══
+const FAQS=[
+  {q:'What is MyBizExco?',a:'MyBizExco is an AI-powered governance operating system built for South African SMMEs. It gives your business an instant "AI Exco" — a CFO, COO, CRO, CHRO and CTO voice — that deliberates real decisions, produces boardroom-ready minutes, and keeps your governance audit trail.'},
+  {q:'What does it do?',a:'It runs your Board, Exco, Subcommittee, Management, Shareholder and Coffee Exco meetings end-to-end: builds the agenda, deliberates each item through your AI leadership team, records the resolution, drafts the minutes, tracks the resulting actions, and distributes everything by email or WhatsApp.'},
+  {q:'How do I use it?',a:'Work through the tabs above in order — About Your Business, Compliance & Legal, Leadership Team, Decision Needed, Communication, Meeting Types — then press Launch MyBizExco. After that you can jump straight back to any tab at any time, from anywhere in the app.'},
+  {q:'Is my data stored anywhere?',a:'Everything currently lives in this browser session. Use the 💾 Save button (top right, or More tab) regularly to export your governance file, and 📂 Restore to reload it next time.'},
+  {q:'Who do I contact for support?',a:'Tap "📞 Contact Us" at the top of any page — it is always there, before and after you launch. We respond within 24 hours.'}
+];
+function renderStepAbout(){
+  return`
+    <div class="step-title">${COUNTRY.flag} About MyBizExco</div>
+    <div class="step-sub">Everything you need to know before you begin.</div>
+    <div class="info-box"><div class="info-box-icon">🤖</div><div><div class="info-box-title">What it does</div><div class="info-box-body">MyBizExco gives every South African SMME an AI-powered Exco: CFO, COO, CRO, CHRO & CTO voices that deliberate your real decisions, produce boardroom-ready minutes, track actions, and keep a defensible governance audit trail — at a fraction of the cost of a traditional advisory retainer, with no equity given up.</div></div></div>
+    <div class="info-box"><div class="info-box-icon">🧭</div><div><div class="info-box-title">How to use it</div><div class="info-box-body">Complete the tabs above in order — Business, Compliance, Leadership, Decision Rules, Communication, Meeting Types — then press Launch. Afterwards, jump straight to any tab, any time, from any page using the bar at the top.</div></div></div>
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title">Frequently asked questions</div>
+      ${FAQS.map(f=>`<div class="faq-item"><div class="faq-q">${esc(f.q)}</div><div class="faq-a">${esc(f.a)}</div></div>`).join('')}
+    </div>
+    <div class="info-box"><div class="info-box-icon">📞</div><div><div class="info-box-title">Need help?</div><div class="info-box-body">Tap "Contact Us" at the top of any page, any time.</div></div></div>
+    <div class="nav-btns"><button class="btn-next" onclick="nextStep()">Continue →</button></div>`;
+}
+
+function renderStep1(){
+  const sectors=IND_LIST.map(k=>`
+    <button class="sector-btn${S.ind===k?' selected':''}" onclick="selectSector('${k}')">
+      <div class="sector-btn-icon">${IND_META[k]?.icon||'🏢'}</div>
+      <div class="sector-btn-label">${IND_META[k]?.label||k}</div>
+    </button>`).join('');
+  const prioHtml=S.prioList.map((p,i)=>`
+    <div class="prio-row">
+      <div class="prio-num">${i+1}</div>
+      <input value="${esc(p)}" placeholder="e.g. Grow revenue 30% this year" oninput="S.prioList[${i}]=this.value"/>
+      <button class="prio-remove" onclick="removePrio(${i})" title="Remove">✕</button>
+    </div>`).join('');
+  const docHtml=S.documents.map((d,i)=>`
+    <div class="doc-row"><div><div class="doc-name">📎 ${esc(d.name)}</div><div class="doc-meta">${esc(d.category||'Document')} · ${d.sizeLabel||''}</div></div><button class="doc-remove" onclick="removeDoc(${i})">✕ Remove</button></div>`).join('');
+  return`
+    <div class="step-title">Tell us about your business</div>
+    <div class="step-sub">This powers your AI board deliberations and every document.</div>
+    <div class="info-box"><div class="info-box-icon">🏭</div><div><div class="info-box-title">Choose your industry sector first</div><div class="info-box-body">We auto-load the correct SA regulators and legal frameworks. This shapes every AI deliberation.</div></div></div>
+    <div class="sector-grid">${sectors}</div>
+    <div class="field"><label>Company name<span class="req">Required</span></label><input id="f_nm" value="${esc(S.nm)}" placeholder="e.g. Stage IS Insurance Solutions (Pty) Ltd" oninput="S.nm=this.value;updateNextBtn()"/><div class="hint">💡 Use your full registered company name as on your CIPC certificate.</div></div>
+    <div class="field"><label>Your name (CEO / Owner)<span class="req">Required</span></label><input id="f_ceo" value="${esc(S.ceoName)}" placeholder="e.g. Vinay Padayachee" oninput="S.ceoName=this.value"/></div>
+    <div class="field-row">
+      <div class="field"><label>CIPC Reg. Number</label><input value="${esc(S.regNo)}" placeholder="2019/123456/07" oninput="S.regNo=this.value"/><div class="hint">💡 On your CoR14.3 certificate.</div></div>
+      <div class="field"><label>Registration date</label><input type="date" value="${S.incDate}" oninput="S.incDate=this.value"/><div class="hint">💡 Used for AGM & board deadlines.</div></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Business size</label><select onchange="S.sz=this.value">${SIZES.map(s=>`<option value="${s.v}"${S.sz===s.v?' selected':''}>${s.l}</option>`).join('')}</select></div>
+      <div class="field"><label>Province</label><select onchange="S.cty=this.value">${PROVINCES.map(p=>`<option${S.cty===p?' selected':''}>${p}</option>`).join('')}</select></div>
+    </div>
+    <div class="field"><label>Annual revenue (optional)</label><input value="${esc(S.rev)}" placeholder="e.g. R2.5M" oninput="S.rev=this.value"/></div>
+    <div class="field">
+      <label>Top priorities for the business (optional)</label>
+      <div class="hint" style="margin:-2px 0 8px">List as many as apply — add or remove rows freely.</div>
+      ${prioHtml}
+      <button onclick="addPrio()" style="width:100%;padding:9px;background:#fff;border:1px dashed #e2e8f0;border-radius:8px;font-size:12px;font-weight:700;color:#64748b;cursor:pointer">+ Add priority</button>
+    </div>
+    <div class="field"><label>Financial context (optional)</label><textarea rows="2" placeholder="e.g. Cash-flow positive, seeking growth capital" oninput="S.fin=this.value">${esc(S.fin)}</textarea></div>
+    <div class="field">
+      <label>Upload any business documents (optional)</label>
+      <div class="hint" style="margin:-2px 0 8px">Strategy docs, budgets, financials, reports, MOUs, marketing & brand documents — so the AI has context on your business whenever it deliberates.</div>
+      <div class="upload-zone" onclick="document.getElementById('bizDocInput').click()">📁 Tap to upload documents<div class="hint">PDF, Word, Excel, PowerPoint or images</div></div>
+      <input type="file" id="bizDocInput" multiple style="display:none" onchange="uploadBizDocs(event)"/>
+      ${docHtml}
+    </div>
+    <div class="nav-btns">
+      <button class="btn-back" onclick="setStep(1)">← Back</button>
+      <button class="btn-next" id="nextBtn" onclick="nextStep()" ${!S.nm?'disabled':''}>Continue →</button>
+    </div>`;
+}
+
+// ═══ STEP 3: COMPLIANCE, REGULATORY & LEGAL ═══
+function renderStepCompliance(){
+  const fw=INDS[S.ind]?.fw||[];
+  const fwHtml=fw.map((f,i)=>`
+    <div style="padding:10px 0;border-bottom:${i<fw.length-1?'1px solid #f1f5f9':'none'}">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <div style="font-size:13px;color:#374151;font-weight:700;display:flex;gap:8px"><span style="color:#F59E0B">✓</span>${esc(f)}</div>
+        <button onclick="explainFramework(${JSON.stringify(f).replace(/"/g,'&quot;')},this)" style="padding:6px 10px;background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0">🔎 What this means for us</button>
+      </div>
+      <div id="fwSum_${i}" style="font-size:12px;color:#64748b;line-height:1.6;margin-top:6px">${esc(S.fwSummaries[f]||'')}</div>
+    </div>`).join('');
+  return`
+    <div class="step-title">Compliance, Regulatory & Legal</div>
+    <div class="step-sub">The Acts and regulators that govern your business — with a plain-English explanation of what each means for you.</div>
+    <div class="info-box"><div class="info-box-icon">⚖️</div><div><div class="info-box-title">Your regulatory frameworks (auto-loaded)</div><div class="info-box-body">Tap "What this means for us" on any item for a short AI summary of how it affects your business and what you must have in place. The AI references all of these in every deliberation.</div></div></div>
+    <div class="card" style="margin-bottom:12px"><div style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em">${esc(INDS[S.ind]?.reg||'Regulator')}</div>${fwHtml}</div>
+    <div class="hint" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;margin-bottom:16px">⚠️ <b>Not legal advice.</b> These AI summaries are general guidance to help you have the right conversation — always confirm specific obligations with your accountant, company secretary or legal advisor before relying on them.</div>
+    <div class="field"><label>Additional framework (optional)</label><input value="${esc(S.ar)}" placeholder="e.g. King IV, GDPR, Basel III" oninput="S.ar=this.value"/></div>
+    <div class="nav-btns">
+      <button class="btn-back" onclick="setStep(2)">← Back</button>
+      <button class="btn-next" onclick="nextStep()">Continue →</button>
+    </div>`;
+}
+async function explainFramework(f,btn){
+  const el=document.getElementById('fwSum_'+Array.from(btn.closest('.card').querySelectorAll('button')).indexOf(btn));
+  const target=btn.parentElement.nextElementSibling;
+  if(target) target.innerHTML='<span class="loading-dots"><span></span><span></span><span></span></span>';
+  const P={nm:S.nm,ind:S.ind,sz:S.sz,cty:S.cty};
+  try{
+    const prompt=`In 2-3 short sentences of plain English, explain how "${f}" affects a ${P.sz||'small'} ${IND_META[P.ind]?.label||''} business called ${P.nm||'this company'} in ${P.cty||'South Africa'}, and what the owner must ensure is in place to comply. No markdown, no headings, just the explanation.`;
+    const text=await callAPI(prompt,220);
+    S.fwSummaries[f]=text.trim();
+  }catch(e){
+    S.fwSummaries[f]='Applies to your sector — ensure policies, registers and filings required under this framework are documented and reviewed at each board meeting.';
+  }
+  if(target) target.textContent=S.fwSummaries[f];
+}
+
+// ═══ STEP 6: COMMUNICATION ═══
+const DIST_ORDER=['distShareholders','distBoard','distExco','distManagement','distStaff'];
+function renderDistCard(key,dl){
+  return `
+    <div class="dist-card${dl.active?' active':''}" id="dc_${key}">
+      <div class="dist-card-header">
+        <div class="dist-card-info">
+          <div class="title">${esc(dl.icon||'')} ${esc(dl.label)} <span class="badge ${dl.active?'badge-email-active':'badge-off'}">${dl.role||'To'} — ${dl.active?'Active':'Off'}</span></div>
+          <div class="desc">${esc(dl.desc||'')}</div>
+        </div>
+        <button class="toggle-btn ${dl.active?'toggle-on-email':'toggle-off'}" onclick="toggleDL('${key}')">${dl.active?'ON':'OFF'}</button>
+      </div>
+      ${dl.active?`
+      <div class="email-list" id="emails_${key}">${dl.emails?'📧 '+esc(dl.emails):'No emails added yet'}</div>
+      <div class="add-row">
+        <input id="emailInput_${key}" placeholder="Add email address" onkeydown="if(event.key==='Enter')addEmail('${key}')"/>
+        <button class="add-btn" onclick="addEmail('${key}')">+Add</button>
+      </div>
+      <div class="hint">💡 Press Enter or +Add.</div>`:''}
+    </div>`;
+}
+function renderStepCommunication(){
+  const dlHtml=DIST_ORDER.filter(k=>S.distLists[k]).map(k=>renderDistCard(k,S.distLists[k])).join('');
+  const customHtml=S.customDistLists.map((dl,i)=>`
+    <div class="dist-card${dl.active?' active':''}">
+      <div class="dist-card-header">
+        <div class="dist-card-info"><div class="title">${esc(dl.icon||'📁')} ${esc(dl.name)} <span class="badge ${dl.active?'badge-email-active':'badge-off'}">${dl.active?'Active':'Off'}</span></div></div>
+        <button class="toggle-btn ${dl.active?'toggle-on-email':'toggle-off'}" onclick="toggleCustomDL(${i})">${dl.active?'ON':'OFF'}</button>
+      </div>
+      <div class="email-list">${dl.emails?'📧 '+esc(dl.emails):'No emails added yet'}</div>
+      <div class="add-row"><input id="customDlInput_${i}" placeholder="Add email address" onkeydown="if(event.key==='Enter')addCustomDlEmail(${i})"/><button class="add-btn" onclick="addCustomDlEmail(${i})">+Add</button></div>
+    </div>`).join('');
+  const waHtml=S.waGroups.map(g=>`
+    <div class="wa-card${g.active?' active':''}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-size:13px;font-weight:700;color:#0f172a">${g.icon||'💬'} ${esc(g.name)}</div>
+        <button class="toggle-btn ${g.active?'toggle-on-wa':'toggle-off'}" onclick="toggleWA('${g.id}')">${g.active?'ON':'OFF'}</button>
+      </div>
+      ${g.active?`
+      <div class="email-list" id="nums_${g.id}">${g.numbers?'📱 '+esc(g.numbers):'No numbers added yet'}</div>
+      <div class="add-row">
+        <input id="numInput_${g.id}" placeholder="+27 82 123 4567" onkeydown="if(event.key==='Enter')addWaNum('${g.id}')"/>
+        <button class="add-btn add-btn-green" onclick="addWaNum('${g.id}')">+Add</button>
+      </div>
+      <div class="hint">💡 Include country code e.g. +27 82 123 4567</div>`:''}
+    </div>`).join('');
+  const commsItemsHtml=S.commsItems.map((c,i)=>`
+    <div class="doc-row"><div><div class="doc-name">${c.icon||'📄'} ${esc(c.name)}</div><div class="doc-meta">${esc(c.type||'Document')}${c.sizeLabel?' · '+c.sizeLabel:''}</div></div><button class="doc-remove" onclick="removeCommsItem(${i})">✕ Remove</button></div>`).join('');
+  return`
+    <div class="step-title">Communication</div>
+    <div class="step-sub">Who receives your minutes, actions and announcements — and how.</div>
+    <div class="hint" style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 12px;margin-bottom:12px;color:#991b1b">🔒 <b>POPIA notice:</b> the names, emails and phone numbers you add below are personal information. They're stored only in this browser (not sent anywhere except when you choose to email or WhatsApp someone). As the responsible party under POPIA, you should only add people who've agreed to be contacted this way, and remove anyone who leaves the business.</div>
+    <div class="size-guide">📏 <b>Size & length guide:</b> WhatsApp messages work best under ~4,000 characters — MyBizExco auto-formats longer minutes for you. WhatsApp attachments are best kept under 16MB. Email attachments are usually capped around 25MB by most providers — for large board packs (which can run into the hundreds of MB, occasionally up to 3GB for a full annual pack), rather share a cloud link (Google Drive / OneDrive / Dropbox) than attach the file directly.</div>
+    <div class="comms-section-title">📧 Email</div>
+    <div class="info-box"><div class="info-box-icon">📧</div><div><div class="info-box-title">Email distribution lists</div><div class="info-box-body">Toggle on/off. Add email addresses. Update anytime in the More tab. Order: Shareholders → Board → Exco/C-Suite → Management → All staff → Other.</div></div></div>
+    ${dlHtml}
+    <div style="font-size:12px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin:14px 0 8px">Other (custom lists — e.g. HR, Risk, Compliance, Marketing)</div>
+    ${customHtml||'<div class="hint" style="margin-bottom:8px">No custom lists yet.</div>'}
+    <div class="card" style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:8px">+ Create a custom distribution list</div>
+      <div class="add-row"><input id="newDlName" placeholder="List name e.g. HR, Risk, Marketing"/><button class="add-btn" onclick="addCustomDl()">+ Create</button></div>
+    </div>
+    <div class="comms-section-title">💬 WhatsApp</div>
+    <div class="info-box"><div class="info-box-icon">💬</div><div><div class="info-box-title">WhatsApp groups</div><div class="info-box-body">Add phone numbers. After meetings, MyBizExco formats messages ready to paste.</div></div></div>
+    ${waHtml}
+    <div class="add-row" style="margin-top:8px">
+      <input id="newWaNameInput" placeholder="New group name e.g. Investors" onkeydown="if(event.key==='Enter')addWaGroup()"/>
+      <button class="add-btn" style="background:#0f172a;color:#fff" onclick="addWaGroup()">+Group</button>
+    </div>
+    <div class="hint">💡 Create custom groups e.g. Investors, Partners, Board Observers.</div>
+    <div class="comms-section-title">📎 Communication items</div>
+    <div class="info-box"><div class="info-box-icon">📎</div><div><div class="info-box-title">Add a communication item</div><div class="info-box-body">Minutes and action lists generated from your meetings appear here automatically. You can also upload a document drafted separately (e.g. a staff bonus communication) so it can be sent to a distribution list.</div></div></div>
+    ${commsItemsHtml}
+    <div class="upload-zone" onclick="document.getElementById('commsDocInput').click()">📁 Tap to upload a document to send<div class="hint">Any file type — see size guide above</div></div>
+    <input type="file" id="commsDocInput" style="display:none" onchange="uploadCommsDoc(event)"/>
+    <div class="nav-btns">
+      <button class="btn-back" onclick="setStep(5)">← Back</button>
+      <button class="btn-next" onclick="nextStep()">Continue →</button>
+    </div>`;
+}
+
+function renderStep3(){
+  const excoHtml=S.exco.map((e,i)=>`
+    <div class="exco-card">
+      <div class="exco-avatar">${e.icon||'👤'}</div>
+      <div style="flex:1">
+        <div class="exco-role">${esc(e.role)}</div>
+        <div class="exco-focus">${esc(e.focus)}</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input style="flex:1" value="${esc(e.dn||'')}" placeholder="Enter name (optional — leave blank if vacant)" oninput="S.exco[${i}].dn=this.value"/>
+          ${e.dn?`<button onclick="removeExcoMember(${i})" style="padding:9px 12px;background:#fff5f5;color:#dc2626;border:1px solid #fca5a5;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0">Remove</button>`:''}
+        </div>
+      </div>
+    </div>`).join('');
+  const logHtml=(S.leadershipLog||[]).slice().reverse().map(l=>`
+    <div class="version-row"><span>${esc(l.role)} — ${esc(l.action)}${l.name?' ('+esc(l.name)+')':''}</span><span style="color:#94a3b8">${esc(l.date)}</span></div>`).join('');
+  return`
+    <div class="step-title">Your leadership team</div>
+    <div class="step-sub">Add names for each Exco role. Vacant roles still get an AI voice.</div>
+    <div class="info-box"><div class="info-box-icon">👥</div><div><div class="info-box-title">What is an Exco?</div><div class="info-box-body">The Executive Committee is your leadership team. MyBizExco creates an AI version of each role — so when you deliberate a decision, you hear from your CFO, COO, CRO, CHRO, and CTO with genuine analysis from their area.</div></div></div>
+    ${excoHtml}
+    ${logHtml?`<div class="card" style="margin-top:14px"><div class="card-title">Leadership changes log</div>${logHtml}</div>`:''}
+    <div class="nav-btns">
+      <button class="btn-back" onclick="setStep(3)">← Back</button>
+      <button class="btn-next" onclick="nextStep()">Continue →</button>
+    </div>`;
+}
+function removeExcoMember(i){
+  const e=S.exco[i];
+  if(!confirm('Remove '+e.dn+' from the '+e.role+' role? The role stays on the Exco with an AI voice, but this person will no longer be named as the incumbent.'))return;
+  if(!S.leadershipLog)S.leadershipLog=[];
+  S.leadershipLog.push({role:e.role,name:e.dn,action:'Departed / role vacated',date:today()});
+  S.exco[i].dn='';
+  S.attendees=S.attendees.map(a=>a.id===e.id?{...a,dn:''}:a);
+  renderStep();renderTab&&S.launched&&renderTab();
+  showToast(e.role+' marked vacant — logged for the audit trail');
+}
+
+function renderStep4(){
+  const rulesHtml=DECISION_RULES.map(r=>`
+    <div class="decision-card${S.quorum[r.k]?' active':''}">
+      <div class="decision-header">
+        <div style="flex:1;padding-right:12px">
+          <div class="decision-title">${r.icon} ${esc(r.label)}</div>
+          <div class="decision-body">${esc(r.body)}</div>
+        </div>
+        <button class="toggle-btn ${S.quorum[r.k]?'toggle-on':'toggle-off'}" onclick="toggleRule('${r.k}')">${S.quorum[r.k]?'ON':'OFF'}</button>
+      </div>
+    </div>`).join('');
+  const activeRules=DECISION_RULES.filter(r=>S.quorum[r.k]).map(r=>`<div style="font-size:13px;color:#374151;padding:2px 0">✓ ${r.label}</div>`).join('');
+  return`
+    <div class="step-title">Decision rules</div>
+    <div class="step-sub">Configure how your board approves resolutions. Change anytime.</div>
+    <div class="info-box"><div class="info-box-icon">🗳️</div><div><div class="info-box-title">How do resolutions get passed?</div><div class="info-box-body">These rules determine when the AI declares a resolution PASSED or FAILED. Mix and match — majority rule plus a CFO veto gives democratic governance with a financial safety net.</div></div></div>
+    ${rulesHtml}
+    <div class="active-rules-box">
+      <div class="active-rules-title">Active rules</div>
+      ${activeRules||'<div style="font-size:13px;color:#dc2626">⚠️ No rules active — all resolutions will pass automatically</div>'}
+    </div>
+    <div class="nav-btns">
+      <button class="btn-back" onclick="setStep(4)">← Back</button>
+      <button class="btn-next" onclick="nextStep()">Continue →</button>
+    </div>`;
+}
+
+// ═══ STEP 7: MEETING TYPES ═══
+const MEETING_TYPES_ORDER=[
+  {k:'shareholder',label:'Shareholder Meeting',icon:'📊',desc:'AGM & shareholder reporting — Companies Act s61'},
+  {k:'board',label:'Board Meeting',icon:'🏛',desc:'Quarterly governance — Companies Act s73'},
+  {k:'subcom',label:'Board Subcommittee',icon:'🧩',desc:'Named committee e.g. ALCO, Social & Ethics'},
+  {k:'exco',label:'Exco Meeting',icon:'⚡',desc:'Monthly leadership operations'},
+  {k:'mgmt',label:'Management Meeting',icon:'👥',desc:'Department & operational updates'},
+  {k:'coffee',label:'Coffee Exco',icon:'☕',desc:'Quick & informal — for agility when something needs solving right now'}
+];
+function renderStepMeetingTypes(){
+  const rows=MEETING_TYPES_ORDER.map(m=>`
+    <div class="dist-card${S.defaultMeetingType===m.k?' active':''}" onclick="selectDefaultMeetingType('${m.k}')" style="cursor:pointer">
+      <div class="dist-card-header">
+        <div class="dist-card-info"><div class="title">${m.icon} ${esc(m.label)}</div><div class="desc">${esc(m.desc)}</div></div>
+        ${S.defaultMeetingType===m.k?'<span class="badge badge-active">Default</span>':''}
+      </div>
+      ${m.k==='subcom'&&S.defaultMeetingType==='subcom'?`<input class="subcomm-input" placeholder="Name this subcommittee e.g. ALCO, Social &amp; Ethics" value="${esc(S.subcomName)}" onclick="event.stopPropagation()" oninput="S.subcomName=this.value"/>`:''}
+    </div>`).join('');
+  return`
+    <div class="step-title">Meeting Types</div>
+    <div class="step-sub">Set your most-used meeting type as the default — you can pick a different type each time you start a meeting.</div>
+    <div class="info-box"><div class="info-box-icon">📅</div><div><div class="info-box-title">Six meeting types, one governance trail</div><div class="info-box-body">Shareholder, Board, Board Subcommittee (name it yourself — e.g. ALCO, or Social &amp; Ethics), Exco, Management and Coffee Exco are all supported. Special Board Meetings remain available inside the Meetings tab for ad-hoc use.</div></div></div>
+    ${rows}
+    <div class="nav-btns">
+      <button class="btn-back" onclick="setStep(6)">← Back</button>
+      <button class="btn-launch" onclick="launchApp()">🚀 Launch MyBizExco</button>
+    </div>`;
+}
+function selectDefaultMeetingType(k){S.defaultMeetingType=k;S.meetingType=k==='subcom'?'subcom':k;renderStep();}
+
+function updateNextBtn(){
+  const btn=document.getElementById('nextBtn');
+  if(btn) btn.disabled=!S.nm;
+}
+function updateCoffeeBtn(){
+  const btn=document.getElementById('coffeeStartBtn');
+  if(!btn) return;
+  const has=S.meetingContext.trim().length>0;
+  btn.disabled=!has;
+  btn.style.background=has?'#92400E':'#e2e8f0';
+  btn.style.color=has?'#fff':'#94a3b8';
+  btn.textContent=has?'☕ Start coffee meeting →':'Describe your problem above to start';
+}
+function nextStep(){
+  if(S.step===2&&!S.nm){showToast('Please enter your company name');return;}
+  setStep(Math.min(S.step+1,TOTAL_STEPS));
+}
+function selectSector(k){S.ind=k;renderStep();}
+function toggleDL(key){S.distLists[key].active=!S.distLists[key].active;renderStep();renderTab&&S.launched&&renderTab();}
+function toggleWA(id){S.waGroups=S.waGroups.map(g=>g.id===id?{...g,active:!g.active}:g);renderStep();renderTab&&S.launched&&renderTab();}
+function toggleRule(k){S.quorum[k]=!S.quorum[k];renderStep();}
+
+// ── priority list ──
+function addPrio(){S.prioList.push('');renderStep();}
+function removePrio(i){S.prioList.splice(i,1);if(!S.prioList.length)S.prioList.push('');renderStep();}
+
+// ── business document uploads ──
+function fmtSize(bytes){
+  if(bytes>1024*1024) return (bytes/1024/1024).toFixed(1)+' MB';
+  if(bytes>1024) return (bytes/1024).toFixed(0)+' KB';
+  return bytes+' B';
+}
+function uploadBizDocs(e){
+  const files=Array.from(e.target.files||[]);
+  files.forEach(f=>{
+    S.documents.push({name:f.name,category:guessDocCategory(f.name),sizeLabel:fmtSize(f.size),type:f.type,addedAt:today()});
+  });
+  e.target.value='';
+  renderStep();
+  showToast(files.length+' document'+(files.length!==1?'s':'')+' added');
+}
+function guessDocCategory(name){
+  const n=name.toLowerCase();
+  if(/strat/.test(n))return'Strategy';
+  if(/budget/.test(n))return'Budget';
+  if(/financ|afs|balance/.test(n))return'Financials';
+  if(/report/.test(n))return'Report';
+  if(/mou|memorandum/.test(n))return'MOU';
+  if(/market/.test(n))return'Marketing';
+  if(/brand/.test(n))return'Brand';
+  return'Business document';
+}
+function removeDoc(i){S.documents.splice(i,1);renderStep();}
+
+// ── communication: custom distribution lists ──
+function addCustomDl(){
+  const inp=document.getElementById('newDlName');
+  if(!inp||!inp.value.trim())return;
+  S.customDistLists.push({id:'dl_'+Date.now(),name:inp.value.trim(),emails:'',active:true,icon:'📁'});
+  renderStep();
+}
+function toggleCustomDL(i){S.customDistLists[i].active=!S.customDistLists[i].active;renderStep();}
+function addCustomDlEmail(i){
+  const inp=document.getElementById('customDlInput_'+i);
+  if(!inp||!inp.value.trim())return;
+  const dl=S.customDistLists[i];
+  dl.emails=dl.emails?dl.emails+', '+inp.value.trim():inp.value.trim();
+  renderStep();
+}
+
+// ── communication items (minutes / actions / uploaded artifacts for distribution) ──
+function uploadCommsDoc(e){
+  const f=e.target.files?.[0];
+  if(!f)return;
+  S.commsItems.push({id:uid(),name:f.name,type:'Uploaded document',icon:'📎',sizeLabel:fmtSize(f.size),addedAt:today()+' '+nowTime()});
+  e.target.value='';
+  renderStep();renderTab&&S.launched&&renderTab();
+  showToast('Added to communication items ✓');
+}
+function removeCommsItem(i){S.commsItems.splice(i,1);renderStep();renderTab&&S.launched&&renderTab();}
+function addEmail(key){
+  const inp=document.getElementById('emailInput_'+key);
+  if(!inp||!inp.value.trim())return;
+  S.distLists[key].emails=S.distLists[key].emails?S.distLists[key].emails+', '+inp.value.trim():inp.value.trim();
+  renderStep();
+}
+function addWaNum(id){
+  const inp=document.getElementById('numInput_'+id);
+  if(!inp||!inp.value.trim())return;
+  const val=inp.value.trim();
+  S.waGroups=S.waGroups.map(g=>g.id===id?{...g,numbers:g.numbers?g.numbers+', '+val:val}:g);
+  renderStep();
+}
+function addWaGroup(){
+  const inp=document.getElementById('newWaNameInput');
+  if(!inp||!inp.value.trim())return;
+  S.waGroups.push({id:'wa_'+Date.now(),name:inp.value.trim(),numbers:'',active:true,icon:'💬'});
+  renderStep();
+}
+
+// ═══════════════════════════════════════════
+// LAUNCH
+// ═══════════════════════════════════════════
+function launchApp(){
+  const fw=[...(INDS[S.ind]?.fw||[]),...(S.ar?[S.ar]:[])];
+  S.profile={nm:S.nm||'My Business',ceoName:S.ceoName||S.nm||'Owner',sz:S.sz,rev:S.rev,
+    cty:S.cty,prio:S.prioList.filter(p=>p&&p.trim()).map((p,i)=>(i+1)+'. '+p).join(' | '),fin:S.fin,ar:S.ar,ind:S.ind,fw,quorum:S.quorum,
+    regNo:S.regNo,incorporationDate:S.incDate};
+  S.exco=S.exco.map(e=>({...e,dn:e.dn||e.role}));
+  S.attendees=[...S.exco.map(e=>({...e,present:true})),
+    {id:'ceo',role:'CEO',dn:S.profile.ceoName,color:'#111',bg:'#f0f0f0',present:true}];
+  S.govRem=calcGovRem(S.profile);
+  S.launched=true;
+  S.meetingType=S.defaultMeetingType||'board';
+  show('app');
+  switchTab('home');
+  showToast('MyBizExco ready ✓');
+}
+
+// ═══════════════════════════════════════════
+// MAIN APP RENDERING
+// ═══════════════════════════════════════════
+function switchTab(tab){
+  S.tab=tab;
+  S.appConfigKey=null;
+  document.querySelectorAll('.nav-tab').forEach(b=>{
+    b.classList.toggle('active',b.dataset.tab===tab);
+  });
+  S.topActiveKey = tab==='board' ? 'meetingtypes' : tab==='more' ? 'communication' : 'welcome';
+  renderTab();
+  document.getElementById('tabContent').scrollTop=0;
+  updateTopbar();
+  renderAllTopTabs();
+}
+
+function updateTopbar(){
+  const P=S.profile||{};
+  const gs=govScore(S.sessions,S.resolutions,S.allActions,P);
+  document.getElementById('topbarScore').textContent=(P.nm||'')+' · '+gs+'/100';
+  // urgent banner
+  const urgent=S.govRem.filter(r=>r.urgent);
+  const banner=document.getElementById('urgentBanner');
+  if(urgent.length){
+    banner.style.display='block';
+    banner.textContent='⚠️ '+urgent[0].icon+' '+urgent[0].label+' — '+urgent[0].days+' days';
+  } else {
+    banner.style.display='none';
+  }
+  document.getElementById('voiceToggleBtn').textContent=S.voiceOn?'🔊':'🔇';
+}
+
+function renderTab(){
+  const el=document.getElementById('tabContent');
+  if(S.tab==='config') el.innerHTML=renderAppConfig();
+  else if(S.tab==='home') el.innerHTML=renderHome()+renderAppNavBtns()+renderScoreBreakdown();
+  else if(S.tab==='board') el.innerHTML=renderBoard()+(S.sessionOpen?'':renderAppNavBtns());
+  else if(S.tab==='log') el.innerHTML=renderLog()+renderAppNavBtns();
+  else if(S.tab==='actions') el.innerHTML=renderActions()+renderAppNavBtns();
+  else el.innerHTML=renderMore()+renderAppNavBtns();
+}
+
+// Back/Continue at the bottom of every operational app page
+const APP_TAB_ORDER=['home','board','log','actions','more'];
+const APP_TAB_LABEL={home:'Home',board:'Meetings',log:'Minutes',actions:'Actions',more:'More'};
+function renderAppNavBtns(){
+  const idx=APP_TAB_ORDER.indexOf(S.tab);
+  const prev=APP_TAB_ORDER[idx-1], next=APP_TAB_ORDER[idx+1];
+  return `<div class="app-nav-btns">
+    <button class="btn-back" onclick="${prev?`switchTab('${prev}')`:''}" ${!prev?'disabled':''}>← ${prev?APP_TAB_LABEL[prev]:'Back'}</button>
+    <button class="btn-next" onclick="${next?`switchTab('${next}')`:''}" ${!next?'disabled':''}>${next?APP_TAB_LABEL[next]:'Continue'} →</button>
+  </div>`;
+}
+
+// Editable setup-style pages, reachable from anywhere via the top tab bar, once launched
+const CONFIG_KEYS=['about','business','compliance','leadership','decisions'];
+function renderAppConfig(){
+  const key=S.appConfigKey||'about';
+  let html='';
+  if(key==='about') html=renderStepAbout();
+  else if(key==='business') html=renderStep1();
+  else if(key==='compliance') html=renderStepCompliance();
+  else if(key==='leadership') html=renderStep3();
+  else html=renderStep4();
+  html=html.replace(/<div class="nav-btns">[\s\S]*$/,'');
+  const idx=CONFIG_KEYS.indexOf(key);
+  const prevKey=CONFIG_KEYS[idx-1], nextKey=CONFIG_KEYS[idx+1];
+  const labelOf=k=>TOP_TABS.find(t=>t.k===k)?.label||k;
+  return html+`<div class="nav-btns">
+    <button class="btn-back" onclick="${prevKey?`goToSection('${prevKey}')`:`switchTab('home')`}">← ${prevKey?labelOf(prevKey):'Back to app'}</button>
+    <button class="btn-next" onclick="${nextKey?`goToSection('${nextKey}')`:`switchTab('home')`}">${nextKey?labelOf(nextKey):'Done — back to app'} →</button>
+  </div>`;
+}
+
+function renderScoreBreakdown(){
+  const P=S.profile||{};
+  const {items,total}=govScoreBreakdown(S.sessions,S.resolutions,S.allActions,P);
+  const rows=items.map(i=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #f1f5f9">
+      <div>
+        <div style="font-size:12px;font-weight:700;color:#0f172a">${i.met?'✅':'⬜'} ${esc(i.label)}</div>
+        <div style="font-size:11px;color:#94a3b8;margin-top:1px">${esc(i.detail)}</div>
+      </div>
+      <div style="font-size:12px;font-weight:800;color:${i.met?'#059669':'#94a3b8'};flex-shrink:0">+${i.pts}/${i.max}</div>
+    </div>`).join('');
+  const missing=items.filter(i=>!i.met).sort((a,b)=>b.max-a.max);
+  return`
+    <div class="card" style="margin-top:18px">
+      <div class="card-title">What's behind your ${total}/100 score</div>
+      <div style="font-size:11px;color:#94a3b8;margin-bottom:6px">Your score updates automatically as you use MyBizExco — nothing here is entered manually.</div>
+      ${rows}
+      ${missing.length?`<div style="font-size:12px;color:#374151;margin-top:12px;padding-top:10px;border-top:1px solid #f1f5f9"><b>Quickest way to raise it:</b> ${esc(missing[0].label.toLowerCase())} — worth up to ${missing[0].max} points.</div>`:'<div style="font-size:12px;color:#059669;margin-top:12px;padding-top:10px;border-top:1px solid #f1f5f9;font-weight:700">🎉 Every category is contributing — nice work.</div>'}
+    </div>`;
+}
+
+// ═══════════════════════════════════════════
+// HOME TAB
+// ═══════════════════════════════════════════
+function renderHome(){
+  const P=S.profile||{};
+  const gs=govScore(S.sessions,S.resolutions,S.allActions,P);
+  const cls=gs>=70?'green':gs>=40?'amber':'red';
+  const label=gs>=70?'Strong governance':gs>=40?'Building governance':'Needs attention';
+  const openAct=S.allActions.filter(a=>a.status==='Open').length;
+  const highAct=S.allActions.filter(a=>a.status==='Open'&&a.priority==='High').length;
+  const nextDl=S.govRem.filter(r=>r.days>0).sort((a,b)=>a.days-b.days)[0];
+  const lastSess=S.sessions[S.sessions.length-1];
+  return`
+    <div class="score-hero">
+      <div class="score-circle ${cls}">${gs}</div>
+      <div class="score-label">${label}</div>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="stat-num">${S.sessions.length}</div><div class="stat-lbl">Meetings</div></div>
+        <div class="stat-box"><div class="stat-num">${S.resolutions.length}</div><div class="stat-lbl">Resolutions</div></div>
+        <div class="stat-box"><div class="stat-num" style="${openAct>0?'color:#D97706':''}">${openAct}</div><div class="stat-lbl">Open actions</div></div>
+        <div class="stat-box"><div class="stat-num" style="${highAct>0?'color:#dc2626':''}">${highAct}</div><div class="stat-lbl">High priority</div></div>
+      </div>
+    </div>
+    ${highAct>0?`<div class="card" style="border-left:4px solid #dc2626;background:#fff5f5;border-radius:0 12px 12px 0">
+      <div class="card-title" style="color:#dc2626">🔴 High priority actions</div>
+      ${S.allActions.filter(a=>a.status==='Open'&&a.priority==='High').slice(0,3).map(a=>`<div style="font-size:13px;color:#374151;padding:4px 0">• ${esc(a.action)} <span style="color:#94a3b8">(${esc(a.owner)})</span></div>`).join('')}
+    </div>`:''}
+    ${nextDl?`<div class="card" style="${nextDl.urgent?'border-color:#D97706;background:#fffbeb':''}">
+      <div class="card-title">📅 Next deadline</div>
+      <div style="font-size:13px;color:#374151">${nextDl.icon} ${esc(nextDl.label)} <span style="color:${nextDl.urgent?'#D97706':'#94a3b8'};font-weight:700">${nextDl.days} days</span></div>
+    </div>`:''}
+    ${lastSess?`<div class="card">
+      <div class="card-title">Last meeting</div>
+      <div style="font-size:13px;color:#374151">${MT[lastSess.meetingType]?.icon||''} ${esc(MT[lastSess.meetingType]?.label||'')} · ${esc(lastSess.date)}</div>
+      <div style="font-size:12px;color:#94a3b8;margin-top:4px">${lastSess.agendaItems?.filter(i=>i.qr?.pass).length||0} resolutions passed</div>
+    </div>`:''}
+    <button onclick="switchTab('board')" style="width:100%;padding:14px;background:#F59E0B;border:none;border-radius:12px;font-weight:800;font-size:15px;cursor:pointer;margin-top:4px">⚡ Start a meeting</button>`;
+}
+
+// ═══════════════════════════════════════════
+// BOARD TAB
+// ═══════════════════════════════════════════
+function renderBoard(){
+  if(S.sessionOpen) return renderSession();
+  const mtHtml=Object.entries(MT).filter(([k])=>k!=='agm').map(([k,m])=>`
+    <button class="mt-btn${S.meetingType===k?' selected'+(k==='coffee'?' coffee':''):''}${k==='coffee'?' coffee':''}" onclick="S.meetingType='${k}';renderTab()">
+      <div class="mt-icon">${m.icon}</div>
+      <div class="mt-label">${m.label}</div>
+      <div class="mt-freq">${m.freq}</div>
+    </button>`).join('');
+  const isCoffee=S.meetingType==='coffee';
+  return`
+    <div class="info-box"><div class="info-box-icon">ℹ️</div><div><div class="info-box-title">Choose your meeting type</div><div class="info-box-body">Each type has a different legal basis and agenda. Use Board for quarterly governance, Exco for monthly operations, AGM annually, Special for urgent matters, Coffee for quick informal problem-solving.</div></div></div>
+    <div class="card">
+      <span class="sh">Meeting type</span>
+      <div class="meeting-type-grid">${mtHtml}</div>
+      <div class="field" style="margin-bottom:14px">
+        <label>${isCoffee?'☕ What problem are you solving?':'📝 Meeting focus — what needs to be resolved? (optional)'}</label>
+        <textarea rows="${isCoffee?4:2}" placeholder="${isCoffee?'Describe the issue you need your team to solve right now. The AI will give targeted advice.':'e.g. Cash flow tight, new supplier decision, staffing issues...'}" oninput="S.meetingContext=this.value;updateCoffeeBtn()" style="width:100%;padding:11px 13px;border:1px solid ${S.meetingContext?'#F59E0B':'#e2e8f0'};border-radius:10px;font-size:13px;resize:vertical;outline:none">${esc(S.meetingContext)}</textarea>
+        ${isCoffee?'<div class="coffee-note">☕ Coffee meetings are informal but fully recorded. Minutes and action lists are automatically generated and saved for your governance audit trail.</div>':''}
+      </div>
+      ${!isCoffee?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <button onclick="openTmplModal()" style="padding:12px;background:#f5f3ff;color:#7C3AED;border:1px solid #ddd6fe;border-radius:10px;font-weight:700;font-size:13px">📋 Use template</button>
+        <button onclick="openSession(null)" style="padding:12px;background:#fffbeb;color:#92400e;border:1px solid #fde68a;border-radius:10px;font-weight:700;font-size:13px">⚡ AI agenda</button>
+      </div>`:`<button id="coffeeStartBtn" onclick="startCoffeeSession()" ${!S.meetingContext.trim()?'disabled':''} style="width:100%;padding:14px;background:${S.meetingContext.trim()?'#92400E':'#e2e8f0'};color:${S.meetingContext.trim()?'#fff':'#94a3b8'};border:none;border-radius:12px;font-weight:800;font-size:14px">${S.meetingContext.trim()?'☕ Start coffee meeting →':'Describe your problem above to start'}</button>`}
+    </div>`;
+}
+
+function startCoffeeSession(){
+  openSession(['Problem statement: '+S.meetingContext,'AI analysis & recommendations','Agreed actions','Closure']);
+}
+
+function openTmplModal(){
+  const built=Object.entries(MT_TMPLS).map(([k,t])=>`
+    <div class="card" style="margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-size:14px;font-weight:700">${esc(t.name)}</div>
+        <button onclick="useTmpl(${JSON.stringify(t.items).replace(/"/g,'&quot;')});closeModal()" style="padding:8px 14px;background:#F59E0B;border:none;border-radius:8px;font-weight:700;font-size:12px">Use</button>
+      </div>
+    </div>`).join('');
+  const custom=S.savedTmpls.map((t,i)=>`
+    <div class="card" style="margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-size:14px;font-weight:700">${esc(t.name)}</div>
+        <button onclick="useTmpl(${JSON.stringify(t.items).replace(/"/g,'&quot;')});closeModal()" style="padding:8px 14px;background:#F59E0B;border:none;border-radius:8px;font-weight:700;font-size:12px">Use</button>
+      </div>
+    </div>`).join('');
+  openModal(`<div class="modal-header"><div class="modal-title">📋 Meeting templates</div><button class="modal-close" onclick="closeModal()">✕</button></div>${built}${custom?'<div style="font-size:12px;font-weight:700;color:#94a3b8;margin:12px 0 8px;text-transform:uppercase">Saved templates</div>'+custom:''}`);
+}
+
+function useTmpl(items){openSession(items);}
+
+function openSession(tmplItems){
+  S.sessRef++;
+  const ds=today(), ts=nowTime();
+  const ref=S.meetingType.toUpperCase()+'-'+ds.replace(/ /g,'-')+'-'+String(S.sessRef).padStart(3,'0');
+  const items=tmplItems?tmplItems.map(t=>({id:uid(),text:t,type:'template',checked:false})):buildAgenda(S.sessions,S.allActions,S.govRem,S.meetingType);
+  S.agendaItems=items;
+  S.activeSession={id:S.sessRef,ref,date:ds,time:ts,meetingType:S.meetingType,meetingContext:S.meetingContext,co:S.profile?.nm||'',ind:S.profile?.ind||''};
+  S.sessionOpen=true;
+  S.pendingDocs=[];
+  renderTab();
+  showToast((MT[S.meetingType]?.label||'Meeting')+' opened — '+items.length+' items');
+}
+
+function renderSession(){
+  const m=MT[S.activeSession?.meetingType]||MT.board;
+  const isCoffee=S.activeSession?.meetingType==='coffee';
+  const isSubcom=S.activeSession?.meetingType==='subcom';
+  const meetingLabel=isSubcom&&S.subcomName?S.subcomName+' (Subcommittee)':m.label;
+  const attHtml=S.attendees.map((a,i)=>`
+    <button onclick="toggleAttendee(${i})" style="padding:6px 10px;border-radius:8px;border:1px solid ${a.present?'#F59E0B':'#e2e8f0'};background:${a.present?'#fffbeb':'#fff'};font-size:11px;font-weight:600;cursor:pointer">
+      ${esc(a.dn||a.role)} ${a.present?'✓':'✗'}
+    </button>`).join('');
+  const itemsHtml=S.agendaItems.map((item,i)=>renderAgendaItem(item,i)).join('');
+  const pendingDocsHtml=(S.pendingDocs||[]).map((d,i)=>`<div class="doc-row"><div><div class="doc-name">📎 ${esc(d.name)}</div><div class="doc-meta">${esc(d.sizeLabel||'')}</div></div><button class="doc-remove" onclick="removePendingDoc(${i})">✕</button></div>`).join('');
+  return`
+    <div class="session-header">
+      <div class="session-ref">${esc(S.activeSession?.ref||'')} · ${esc(S.activeSession?.date||'')} ${esc(S.activeSession?.time||'')}</div>
+      <div class="session-title">${m.icon} ${esc(meetingLabel)}${isCoffee?' — Informal':''}</div>
+      <div class="session-actions">
+        <button class="sbtn" onclick="openNoticeModal()">📋 Notice</button>
+        <button class="sbtn" onclick="addAgendaItem()">+ Item</button>
+        <button class="sbtn" onclick="saveTmpl()">💾 Save template</button>
+        <button class="sbtn" style="background:#fff5f5;color:#dc2626;border-color:#fca5a5" onclick="closeMeeting()">✓ Close meeting</button>
+      </div>
+    </div>
+    ${isCoffee&&S.meetingContext?`<div class="coffee-note" style="margin-bottom:10px">☕ <strong>Problem being solved:</strong> ${esc(S.meetingContext)}</div>`:''}
+    <div class="card">
+      <span class="sh">Attendance</span>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">${attHtml}</div>
+    </div>
+    <div class="card">
+      <span class="sh">Financial snapshot (optional)</span>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div><label style="font-size:12px;color:#64748b">Revenue</label><input value="${esc(S.financials.revenue)}" placeholder="e.g. R250K" oninput="S.financials.revenue=this.value" style="width:100%;padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none;margin-top:4px"/></div>
+        <div><label style="font-size:12px;color:#64748b">Expenses</label><input value="${esc(S.financials.expenses)}" placeholder="e.g. R180K" oninput="S.financials.expenses=this.value" style="width:100%;padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none;margin-top:4px"/></div>
+      </div>
+    </div>
+    <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:8px">Agenda items (${S.agendaItems.length})</div>
+    ${itemsHtml}
+    <button onclick="addAgendaItem()" style="width:100%;padding:12px;background:#fff;border:1px dashed #e2e8f0;border-radius:10px;font-size:13px;font-weight:600;color:#64748b;cursor:pointer">+ Add agenda item</button>
+    <div class="card" style="margin-top:12px">
+      <span class="sh">Documents to draft / upload post-meeting</span>
+      <div class="hint" style="margin-bottom:8px">e.g. a bonus-payment memo agreed in the meeting — draft it separately, then attach it here so it's linked to this meeting's action list.</div>
+      ${pendingDocsHtml}
+      <div class="upload-zone" onclick="document.getElementById('sessionDocInput').click()">📁 Tap to upload a document</div>
+      <input type="file" id="sessionDocInput" style="display:none" onchange="uploadSessionDoc(event)"/>
+    </div>
+    <div style="margin-top:18px">
+      <button onclick="closeMeeting()" style="width:100%;padding:15px;background:#fff5f5;color:#dc2626;border:1px solid #fca5a5;border-radius:12px;font-weight:800;font-size:14px;cursor:pointer">✓ Close meeting</button>
+      <div class="hint" style="text-align:center;margin-top:6px">Also available at the top of the page — handy here once the agenda runs long.</div>
+    </div>`;
+}
+function uploadSessionDoc(e){
+  const f=e.target.files?.[0];if(!f)return;
+  if(!S.pendingDocs)S.pendingDocs=[];
+  S.pendingDocs.push({name:f.name,sizeLabel:fmtSize(f.size),addedAt:today()+' '+nowTime()});
+  e.target.value='';renderTab();showToast('Document attached to this meeting ✓');
+}
+function removePendingDoc(i){S.pendingDocs.splice(i,1);renderTab();}
+
+function renderAgendaItem(item,i){
+  const hasResult=item.rs&&item.rs.length>0;
+  const resultHtml=hasResult?item.rs.map((r,ri)=>`
+    <div class="exec-result ${r.verdict?.toLowerCase()||'caution'}">
+      <div><span class="exec-name">${esc(r.role)}</span><span class="exec-verdict verdict-${r.verdict?.toLowerCase()||'caution'}">${r.verdict||'?'}</span></div>
+      <div class="exec-analysis">${esc(r.reason||'')}${r.analysis?' — '+r.analysis:''}</div>
+      <div class="add-row" style="margin-top:6px">
+        <input id="memberAction_${item.id}_${ri}" placeholder="Action item from ${esc(r.dn||r.role)}..." style="font-size:12px;padding:7px 9px"/>
+        <button class="add-btn" style="padding:7px 10px;font-size:11px" onclick="addMemberAction('${item.id}',${ri},'${esc(r.dn||r.role).replace(/'/g,"\\'")}')">+ Add</button>
+      </div>
+      ${(item.memberActions||[]).filter(ma=>ma.ri===ri).map(ma=>`<div style="font-size:12px;color:#374151;padding:4px 8px;background:#f8fafc;border-radius:6px;margin-top:4px">✓ ${esc(ma.text)}</div>`).join('')}
+    </div>`).join(''):'';
+  const synHtml=item.syn?`
+    <div class="synthesis-box">
+      <div class="synthesis-result ${item.qr?.pass?'result-pass':'result-fail'}">${item.qr?.pass?'✓ RESOLUTION PASSED':'✗ RESOLUTION FAILED'} — ${esc(item.qr?.reason||'')}</div>
+      ${item.syn.synthesis?`<div style="font-size:13px;color:#374151;margin-bottom:6px">${esc(item.syn.synthesis)}</div>`:''}
+      ${item.syn.risks?.length?`<div style="font-size:12px;color:#64748b"><strong>Risks:</strong> ${item.syn.risks.map(r=>esc(r)).join(' · ')}</div>`:''}
+      ${!item.qr?.pass?`<button onclick="carryForward(${i})" style="margin-top:8px;padding:6px 12px;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer">↷ Carry to next meeting</button>`:''}
+    </div>`:'';
+  return`
+    <div class="agenda-item" id="item_${item.id}">
+      <div class="ai-text">${i+1}. ${esc(item.text)}</div>
+      ${item.loading?`<div style="display:flex;align-items:center;gap:8px;padding:10px 0"><div class="loading-dots"><span></span><span></span><span></span></div><span style="font-size:12px;color:#94a3b8">AI deliberating...</span></div>`:''}
+      ${resultHtml}
+      ${synHtml}
+      ${!hasResult&&!item.loading?`<div class="ai-buttons">
+        <button class="btn-deliberate" onclick="deliberate('${item.id}')">⚡ ${S.activeSession?.meetingType==='coffee'?'Ask the team':'Deliberate'}</button>
+        <button class="btn-remove" onclick="removeItem('${item.id}')">✕ Remove</button>
+      </div>`:''}
+      <div style="margin-top:8px">
+        <input placeholder="Add CEO note..." style="width:100%;padding:7px 10px;border:1px solid #e2e8f0;border-radius:7px;font-size:12px;outline:none" value="${esc(item.ceoNote||'')}" oninput="S.agendaItems.find(x=>x.id==='${item.id}').ceoNote=this.value"/>
+      </div>
+    </div>`;
+}
+function addMemberAction(itemId,ri,dn){
+  const inp=document.getElementById('memberAction_'+itemId+'_'+ri);
+  if(!inp||!inp.value.trim())return;
+  const item=S.agendaItems.find(x=>x.id===itemId);
+  if(!item)return;
+  if(!item.memberActions)item.memberActions=[];
+  const text=inp.value.trim();
+  item.memberActions.push({ri,dn,text});
+  S.allActions.push({id:uid(),action:text,owner:dn,due:'30 days',priority:'Medium',status:'Open',ref:S.activeSession?.ref||'',date:today()});
+  renderTab();
+  showToast('Action added to consolidated list ✓');
+}
+
+function toggleAttendee(i){
+  S.attendees[i].present=!S.attendees[i].present;
+  renderTab();
+}
+function removeItem(id){S.agendaItems=S.agendaItems.filter(x=>x.id!==id);renderTab();}
+function addAgendaItem(){
+  const text=prompt('Enter agenda item:');
+  if(text&&text.trim()){S.agendaItems.push({id:uid(),text:text.trim(),type:'custom',checked:false});renderTab();}
+}
+function carryForward(i){S.agendaItems[i].carriedForward=true;showToast('Will appear in next meeting agenda');renderTab();}
+function saveTmpl(){
+  const name=prompt('Template name:');
+  if(!name)return;
+  S.savedTmpls.push({name,items:S.agendaItems.map(i=>i.text)});
+  showToast('Template saved: '+name);
+}
+
+// ═══════════════════════════════════════════
+// AI DELIBERATION
+// ═══════════════════════════════════════════
+async function deliberate(id){
+  const idx=S.agendaItems.findIndex(x=>x.id===id);
+  if(idx<0)return;
+  S.agendaItems[idx].loading=true;
+  S.agendaItems[idx].rs=[];
+  renderTab();
+  const item=S.agendaItems[idx];
+  const P=S.profile||{};
+  const fw=INDS[P.ind]?.fw||P.fw||[];
+  const results=[];
+  for(const e of S.exco){
+    try{
+      const prompt=detPrompt(e.role,e.focus||'Governance',item.text,P,fw,S.meetingContext);
+      const raw=await callAPI(prompt,500);
+      const clean=raw.replace(/```json|```/g,'').trim();
+      const parsed=JSON.parse(clean);
+      results.push({role:e.role,dn:e.dn||e.role,...parsed});
+    }catch(err){
+      results.push(deterministicAnalysis(e.role,e.focus,item.text,P));
+    }
+    S.agendaItems[idx].rs=[...results];
+    renderTab();
+    if(S.voiceOn&&results.length>0){
+      const last=results[results.length-1];
+      speak((last.dn||last.role)+' says: '+last.analysis);
+    }
+    await new Promise(r=>setTimeout(r,100));
+  }
+  // Synthesis
+  try{
+    const sp=synPrompt(item.text,results,P);
+    const raw=await callAPI(sp,800);
+    const clean=raw.replace(/```json|```/g,'').trim();
+    const syn=JSON.parse(clean);
+    S.agendaItems[idx].syn=syn;
+    S.agendaItems[idx].qr=evalQuorum(results,S.profile?.quorum||S.quorum);
+    // Capture actions
+    if(syn.next_steps?.length){
+      syn.next_steps.forEach(step=>{
+        S.allActions.push({id:uid(),action:step,owner:S.exco[0]?.dn||'Exco',
+          due:'30 days',priority:'Medium',status:'Open',ref:S.activeSession?.ref||'',date:today()});
+      });
+    }
+  }catch(e){
+    S.agendaItems[idx].qr={pass:true,reason:'Majority support'};
+    S.agendaItems[idx].syn={synthesis:'Board reviewed the item.',recommendation:'Proceed with implementation.',risks:[]};
+  }
+  S.agendaItems[idx].loading=false;
+  renderTab();
+}
+
+// ═══════════════════════════════════════════
+// CLOSE MEETING
+// ═══════════════════════════════════════════
+function closeMeeting(){
+  const warnings=chkQ(S.attendees,S.agendaItems,S.profile?.quorum||S.quorum);
+  if(warnings.length){
+    if(!confirm('WARNING: '+warnings.join(', ')+'\n\nClose anyway?'))return;
+  }
+  const passed=S.agendaItems.filter(i=>i.qr?.pass);
+  passed.forEach(item=>{
+    S.resolutions.push({id:uid(),text:item.text,date:today(),ref:S.activeSession?.ref||''});
+  });
+  const draftText=stripTags(buildMins({...S.activeSession,agendaItems:S.agendaItems,attendees:S.attendees,financials:S.financials},S.exco,S.profile||{}));
+  const finalSession={...S.activeSession,agendaItems:S.agendaItems,attendees:S.attendees,
+    documents:S.pendingDocs,financials:S.financials,meetingContext:S.meetingContext,closedAt:nowTime(),
+    minutesStatus:'draft',
+    minutesVersions:[{v:1,text:draftText,by:S.profile?.ceoName||'CEO',at:today()+' '+nowTime()}]};
+  S.sessions.push(finalSession);
+  const mtLabel=(MT[finalSession.meetingType]||MT.board).label;
+  S.commsItems.push({id:uid(),name:mtLabel+' Minutes — '+finalSession.ref,type:'Minutes (draft — v1)',icon:'📋',addedAt:today()});
+  S.commsItems.push({id:uid(),name:mtLabel+' Action List — '+finalSession.ref,type:'Action list',icon:'✅',addedAt:today()});
+  S.sessionOpen=false;
+  S.activeSession=null;
+  S.agendaItems=[];
+  S.meetingContext='';
+  S.financials={revenue:'',expenses:''};
+  S.pendingDocs=[];
+  S.govRem=calcGovRem(S.profile);
+  showToast('Meeting closed ✓ — minutes drafted, ready to review in Minutes tab');
+  switchTab('log');
+}
+function stripTags(html){return html.replace(/<[^>]*>/g,'\n').replace(/\n{2,}/g,'\n').trim();}
+
+// ═══════════════════════════════════════════
+// MINUTES TAB
+// ═══════════════════════════════════════════
+function renderLog(){
+  if(!S.sessions.length) return`
+    <div class="info-box"><div class="info-box-icon">📋</div><div><div class="info-box-title">Minutes & meeting records</div><div class="info-box-body">All your closed meetings appear here. Tap Print for formal minutes, 📊 for shareholder report, 📤 to distribute.</div></div></div>
+    <div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">No meetings yet</div><div class="empty-state-body">Start your first meeting on the Board tab.<br>Your minutes will appear here.</div></div>`;
+  const sessHtml=S.sessions.slice().reverse().map((sess,i)=>{
+    const mt=MT[sess.meetingType]||MT.board;
+    const passed=sess.agendaItems?.filter(x=>x.qr?.pass).length||0;
+    const idx=S.sessions.length-1-i;
+    const ver=sess.minutesVersions?.length||1;
+    const status=sess.minutesStatus||'draft';
+    return`<div class="session-card">
+      <div class="session-card-header">
+        <div>
+          <div class="session-card-type">${mt.icon} ${mt.label}${sess.meetingType==='coffee'?' (Informal)':''} <span class="badge ${status==='confirmed'?'badge-active':'badge-off'}" style="margin-left:4px">${status==='confirmed'?'Confirmed':'Draft'} · v${ver}</span></div>
+          <div class="session-card-date">${esc(sess.ref)} · ${esc(sess.date)} ${esc(sess.time||'')}</div>
+          <div style="font-size:12px;color:#94a3b8;margin-top:2px">${passed} resolution${passed!==1?'s':''} passed</div>
+        </div>
+      </div>
+      ${sess.meetingContext?`<div style="font-size:12px;color:#92400e;background:#fef3c7;padding:6px 10px;border-radius:6px;margin-bottom:8px">☕ ${esc(sess.meetingContext)}</div>`:''}
+      <div class="session-card-btns">
+        <button class="session-card-btn" onclick="editMinutes(${idx})">📝 Edit</button>
+        <button class="session-card-btn" onclick="printMins(${idx})">🖨 Print</button>
+        <button class="session-card-btn" onclick="printShareh(${idx})">📊 Shareholder</button>
+        <button class="session-card-btn" onclick="openSendHub(${idx})">📤 Send</button>
+        <button class="session-card-btn" onclick="addAmendment(${idx})">✏ Amend</button>
+        <button class="session-card-btn" onclick="viewVersions(${idx})">🕓 Versions (${ver})</button>
+      </div>
+      ${sess.documents?.length?`<div style="font-size:11px;color:#94a3b8;margin-top:6px">📎 ${sess.documents.length} document${sess.documents.length!==1?'s':''} attached to this meeting</div>`:''}
+      ${sess.amendments?.length?`<div style="font-size:11px;color:#94a3b8;margin-top:2px">${sess.amendments.length} amendment${sess.amendments.length!==1?'s':''} on record</div>`:''}
+    </div>`;
+  }).join('');
+  return`
+    <div class="info-box"><div class="info-box-icon">📋</div><div><div class="info-box-title">Minutes & meeting records</div><div class="info-box-body">Tap Print for formal minutes · 📊 for shareholder report · 📤 to email or WhatsApp your team.</div></div></div>
+    ${sessHtml}`;
+}
+
+function printMins(i){
+  const sess=S.sessions[i];
+  printDoc(sess.meetingType==='coffee'?'Coffee Exco — Informal Notes':'Board Minutes',buildMins(sess,S.exco,S.profile||{}));
+}
+function editMinutes(i){
+  const sess=S.sessions[i];
+  const currentText=sess.minutesVersions?.[sess.minutesVersions.length-1]?.text||stripTags(buildMins(sess,S.exco,S.profile||{}));
+  openModal(`
+    <div class="modal-header"><div class="modal-title">📝 Edit minutes — ${esc(sess.ref)}</div><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="hint" style="margin-bottom:8px">Editing creates a new version. Confirm & Store locks this version into the audit trail before it's sent out.</div>
+    <textarea id="minutesEditArea" rows="14" style="width:100%;padding:12px;border:1px solid #e2e8f0;border-radius:10px;font-size:12px;outline:none;font-family:monospace">${esc(currentText)}</textarea>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+      <button onclick="saveMinutesDraft(${i})" style="padding:12px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer">💾 Save as draft</button>
+      <button onclick="confirmMinutes(${i})" style="padding:12px;background:#059669;color:#fff;border:none;border-radius:10px;font-weight:800;font-size:13px;cursor:pointer">✓ Confirm & Store</button>
+    </div>`);
+}
+function saveMinutesDraft(i){
+  const text=document.getElementById('minutesEditArea')?.value||'';
+  const sess=S.sessions[i];
+  if(!sess.minutesVersions)sess.minutesVersions=[];
+  sess.minutesVersions.push({v:sess.minutesVersions.length+1,text,by:S.profile?.ceoName||'CEO',at:today()+' '+nowTime()});
+  sess.minutesStatus='draft';
+  closeModal();renderTab();showToast('Draft saved as new version ✓');
+}
+function confirmMinutes(i){
+  const text=document.getElementById('minutesEditArea')?.value||'';
+  const sess=S.sessions[i];
+  if(!sess.minutesVersions)sess.minutesVersions=[];
+  sess.minutesVersions.push({v:sess.minutesVersions.length+1,text,by:S.profile?.ceoName||'CEO',at:today()+' '+nowTime(),confirmed:true});
+  sess.minutesStatus='confirmed';
+  closeModal();renderTab();showToast('Minutes confirmed & stored — ready to send ✓');
+}
+function viewVersions(i){
+  const sess=S.sessions[i];
+  const versions=sess.minutesVersions||[];
+  openModal(`
+    <div class="modal-header"><div class="modal-title">🕓 Version history — ${esc(sess.ref)}</div><button class="modal-close" onclick="closeModal()">✕</button></div>
+    ${versions.slice().reverse().map(v=>`
+      <div class="version-row"><span>v${v.v} ${v.confirmed?'✓ Confirmed':'Draft'} — ${esc(v.by||'')}</span><span style="color:#94a3b8">${esc(v.at||'')}</span></div>`).join('')||'<div class="hint">No versions recorded yet.</div>'}
+    <button onclick="closeModal();editMinutes(${i})" style="width:100%;padding:11px;background:#F59E0B;border:none;border-radius:8px;font-weight:700;font-size:13px;margin-top:12px;cursor:pointer">Open latest for editing</button>`);
+}
+function printShareh(i){
+  printDoc('Shareholder Report',genShareholder(S.sessions[i],S.profile||{}));
+}
+function addAmendment(i){
+  const text=prompt('Describe the amendment:');
+  if(!text)return;
+  if(!S.sessions[i].amendments)S.sessions[i].amendments=[];
+  S.sessions[i].amendments.push({text,by:S.profile?.ceoName||'CEO',at:today()+' '+nowTime()});
+  renderTab();
+  showToast('Amendment recorded');
+}
+function openSendHub(i){
+  const sess=S.sessions[i];
+  const passed=sess.agendaItems?.filter(x=>x.qr?.pass).map(x=>x.text)||[];
+  const actions=S.allActions.filter(a=>a.ref===sess.ref);
+  const msgSummary=`*${S.profile?.nm||'Company'} — ${MT[sess.meetingType]?.label||'Meeting'}*
+📅 ${sess.date}
+📋 Ref: ${sess.ref}
+
+Resolutions passed:
+${passed.map((r,i)=>`${i+1}. ${r}`).join('\n')||'None'}
+
+_MyBizExco_`;
+  const msgActions=`*${S.profile?.nm||'Company'} — Action List*
+📅 ${sess.date}
+
+${actions.map((a,i)=>`${i+1}. ${a.action}
+   Owner: ${a.owner} | Due: ${a.due}`).join('\n')||'No actions'}
+
+_MyBizExco_`;
+  openModal(`
+    <div class="modal-header"><div class="modal-title">📤 Send hub</div><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div style="font-size:13px;font-weight:700;color:#0D9488;margin-bottom:8px">📧 Email distribution</div>
+    ${DIST_ORDER.filter(k=>S.distLists[k]?.active).map(k=>{const d=S.distLists[k];return`
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:13px">
+        <span>${d.icon||''} ${d.label}</span>
+        <span style="color:#94a3b8;font-size:11px">${d.emails||'No emails set'}</span>
+      </div>`;}).join('')}
+    ${S.customDistLists.filter(d=>d.active).map(d=>`
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:13px">
+        <span>${d.icon||'📁'} ${esc(d.name)}</span>
+        <span style="color:#94a3b8;font-size:11px">${d.emails||'No emails set'}</span>
+      </div>`).join('')}
+    <button onclick="printMins(${i});closeModal()" style="width:100%;padding:11px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;font-weight:700;margin-top:10px;cursor:pointer">🖨 Print minutes for email</button>
+    <div style="font-size:13px;font-weight:700;color:#374151;margin:14px 0 8px">💬 WhatsApp</div>
+    <textarea id="waMsg" rows="6" style="width:100%;padding:10px;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none">${msgSummary}</textarea>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+      <button onclick="document.getElementById('waMsg').value=${JSON.stringify(msgSummary)}" style="padding:8px;background:#f1f5f9;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">Minutes</button>
+      <button onclick="document.getElementById('waMsg').value=${JSON.stringify(msgActions)}" style="padding:8px;background:#f1f5f9;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">Actions</button>
+    </div>
+    ${S.waGroups.filter(g=>g.active).map(g=>`
+      <button onclick="sendWA(${JSON.stringify(g.numbers||'').replace(/"/g,'&quot;')})" style="width:100%;padding:10px;background:#25D366;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;margin-top:8px;cursor:pointer">💬 Send to ${esc(g.name)}</button>`).join('')}
+  `);
+}
+
+function sendWA(numbers){
+  const msg=document.getElementById('waMsg')?.value||'';
+  navigator.clipboard?.writeText(msg).then(()=>showToast('Message copied to clipboard'));
+  const num=numbers.split(',')[0].trim().replace(/\s/g,'');
+  if(num) window.open('https://wa.me/'+num.replace('+','')+'?text='+encodeURIComponent(msg));
+}
+
+// ═══════════════════════════════════════════
+// ACTIONS TAB
+// ═══════════════════════════════════════════
+function renderActions(){
+  const open=S.allActions.filter(a=>a.status!=='Closed');
+  const closed=S.allActions.filter(a=>a.status==='Closed');
+  if(!S.allActions.length) return`
+    <div class="info-box"><div class="info-box-icon">✅</div><div><div class="info-box-title">Action register</div><div class="info-box-body">Actions are automatically captured from AI deliberations. Tap an action to close with a note, attach a document, or generate an AI artifact.</div></div></div>
+    <div class="empty-state"><div class="empty-state-icon">✅</div><div class="empty-state-title">No actions yet</div><div class="empty-state-body">Run a meeting and deliberate agenda items — actions will be captured here automatically.</div></div>`;
+  const renderAct=(a,i)=>`
+    <div class="action-card ${a.priority==='High'?'high':''} ${a.status==='Closed'?'closed':''} ${a.status==='Review'?'review':''}">
+      <div class="action-text">${esc(a.action)}</div>
+      <div class="action-meta">${esc(a.owner)} · Due: ${esc(a.due)} · <span style="font-weight:700;color:${a.status==='Closed'?'#059669':a.status==='Review'?'#7C3AED':'#D97706'}">${a.status}</span> · ${esc(a.priority)}</div>
+      ${a.status!=='Closed'?`<div class="action-btns">
+        <button class="action-btn" onclick="closeAction('${a.id}')">✓ Close</button>
+        <button class="action-btn" onclick="aiAction('${a.id}')">✦ AI draft</button>
+        <button class="action-btn" onclick="document.getElementById('actionDoc_${a.id}').click()">📎 Attach doc</button>
+        <input type="file" id="actionDoc_${a.id}" style="display:none" onchange="attachActionDoc('${a.id}',event)"/>
+      </div>`:''}
+      ${a.attachedDoc?`<div style="font-size:11px;color:#0f766e;margin-top:6px">📎 ${esc(a.attachedDoc.name)} attached${a.attachedDoc.sizeLabel?' ('+esc(a.attachedDoc.sizeLabel)+')':''}</div>`:''}
+      ${a.closeNote?`<div style="font-size:12px;color:#64748b;margin-top:6px;padding:6px 8px;background:#f8fafc;border-radius:6px">${esc(a.closeNote)}</div>`:''}
+    </div>`;
+  return`
+    <div class="info-box"><div class="info-box-icon">✅</div><div><div class="info-box-title">Action register</div><div class="info-box-body">Actions captured from AI deliberations. Tap Close to complete or AI Draft to generate an artifact.</div></div></div>
+    <button onclick="addManualAction()" style="width:100%;padding:11px;background:#fff;border:1px dashed #e2e8f0;border-radius:10px;font-size:13px;font-weight:600;color:#64748b;margin-bottom:10px;cursor:pointer">+ Add action manually</button>
+    ${open.map(renderAct).join('')}
+    ${closed.length?`<div style="font-size:12px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin:12px 0 8px">Closed (${closed.length})</div>${closed.map(renderAct).join('')}`:''}`;
+}
+
+function closeAction(id){
+  const note=prompt('Closing note (what was done?):');
+  if(note===null)return;
+  S.allActions=S.allActions.map(a=>a.id===id?{...a,status:'Closed',closeNote:note}:a);
+  renderTab();
+  showToast('Action closed ✓');
+}
+function attachActionDoc(id,e){
+  const f=e.target.files?.[0];
+  if(!f)return;
+  S.allActions=S.allActions.map(a=>a.id===id?{...a,attachedDoc:{name:f.name,sizeLabel:fmtSize(f.size)}}:a);
+  renderTab();
+  showToast('Document attached — action remains '+((S.allActions.find(a=>a.id===id)||{}).status||'Open'));
+}
+async function aiAction(id){
+  const action=S.allActions.find(a=>a.id===id);
+  if(!action)return;
+  showToast('AI generating artifact...');
+  try{
+    const prompt=`You are the governance officer for ${S.profile?.nm||'the company'}. Write a 150-word governance artifact closing this action: "${action.action}". Include: what was done, key findings, next steps, sign-off. Format as a professional document. Be specific and grounded.`;
+    const text=await callAPI(prompt,500);
+    const note=text.trim();
+    S.allActions=S.allActions.map(a=>a.id===id?{...a,status:'Closed',closeNote:note}:a);
+    renderTab();
+    showToast('AI artifact generated ✓');
+  }catch(e){
+    showToast('AI unavailable — please close manually');
+  }
+}
+function addManualAction(){
+  const text=prompt('Action description:');
+  if(!text?.trim())return;
+  const owner=prompt('Owner (role name):')||'Exco';
+  S.allActions.push({id:uid(),action:text.trim(),owner,due:'30 days',priority:'Medium',status:'Open',ref:'Manual',date:today()});
+  renderTab();
+}
+
+// ═══════════════════════════════════════════
+// MORE TAB
+// ═══════════════════════════════════════════
+function renderMore(){
+  const P=S.profile||{};
+  const gs=govScore(S.sessions,S.resolutions,S.allActions,P);
+  const bm=BM[P.sz]||BM.sme;
+  return`
+    <div class="more-section">
+      <div class="more-section-title">Session data</div>
+      <div class="more-row" onclick="saveData()"><div class="more-row-label">💾 Save governance file</div><div class="more-row-icon">→</div></div>
+      <div class="more-row" onclick="document.getElementById('restoreFile').click()"><div class="more-row-label">📂 Restore session</div><div class="more-row-icon">→</div></div>
+    </div>
+    <div class="more-section">
+      <div class="more-section-title">Governance health</div>
+      <div class="card"><div style="text-align:center;margin-bottom:12px"><span class="score-circle ${gs>=70?'green':gs>=40?'amber':'red'}" style="display:inline-flex;width:60px;height:60px;font-size:22px">${gs}</span></div>
+      <div style="font-size:12px;color:#64748b"><strong>Benchmark for ${P.sz||'sme'}:</strong> Board meetings ${bm.board} · Exco ${bm.exco}</div>
+      <div style="font-size:12px;color:#94a3b8;margin-top:4px">${bm.tip||''}</div></div>
+    </div>
+    <div class="more-section" id="commsAnchor">
+      <div class="more-section-title">📧 Email distribution lists</div>
+      <div class="hint" style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:8px 10px;margin-bottom:10px;color:#991b1b">🔒 POPIA: only add contacts who've agreed to be reached this way, stored in this browser only. Remove anyone who leaves the business.</div>
+      ${DIST_ORDER.filter(k=>S.distLists[k]).map(key=>{const dl=S.distLists[key];return`
+        <div class="more-row" onclick="editDL('${key}')">
+          <div class="more-row-label">${dl.icon||''} ${dl.label} <span class="badge ${dl.active?'badge-email-active':'badge-off'}">${dl.active?'Active':'Off'}</span></div>
+          <div style="font-size:11px;color:#94a3b8;margin-top:2px">${dl.emails||'No emails'}</div>
+        </div>`;}).join('')}
+      <div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;margin:12px 0 6px">Other</div>
+      ${S.customDistLists.map((dl,i)=>`
+        <div class="more-row" onclick="editCustomDL(${i})">
+          <div class="more-row-label">${dl.icon||'📁'} ${esc(dl.name)} <span class="badge ${dl.active?'badge-email-active':'badge-off'}">${dl.active?'Active':'Off'}</span></div>
+          <div style="font-size:11px;color:#94a3b8;margin-top:2px">${dl.emails||'No emails'}</div>
+        </div>`).join('')||'<div class="hint" style="padding:4px 0 8px">No custom lists yet — add one in the Communication tab.</div>'}
+    </div>
+    <div class="more-section">
+      <div class="more-section-title">💬 WhatsApp groups</div>
+      ${S.waGroups.map(g=>`
+        <div class="more-row" onclick="composeWA('${g.id}')">
+          <div class="more-row-label">${g.icon||'💬'} ${esc(g.name)} <span class="badge ${g.active?'badge-wa-active':'badge-off'}">${g.active?'Active':'Off'}</span></div>
+          <div style="font-size:11px;color:#94a3b8">${g.numbers||'No numbers'}</div>
+        </div>`).join('')}
+    </div>
+    <div class="more-section">
+      <div class="more-section-title">📎 Communication items</div>
+      ${S.commsItems.map((c,i)=>`<div class="more-row"><div class="more-row-label">${c.icon||'📄'} ${esc(c.name)}</div><button class="doc-remove" onclick="removeCommsItem(${i});renderTab()">✕</button></div>`).join('')||'<div class="hint" style="padding:4px 0 8px">None yet.</div>'}
+      <div class="more-row" onclick="document.getElementById('commsDocInputMore').click()"><div class="more-row-label">📁 Upload a document to send</div><div class="more-row-icon">→</div></div>
+      <input type="file" id="commsDocInputMore" style="display:none" onchange="uploadCommsDoc(event)"/>
+    </div>
+    <div class="more-section">
+      <div class="more-section-title">Registers</div>
+      <div class="more-row" onclick="openConflictReg()"><div class="more-row-label">⚖️ Conflict of interest register</div><div class="more-row-icon">→</div></div>
+    </div>
+    <div class="more-section">
+      <div class="more-section-title">Tools & generators</div>
+      <div class="more-row" onclick="genDirPackLocal()"><div class="more-row-label">📄 Director onboarding pack</div><div class="more-row-icon">→</div></div>
+      <div class="more-row" onclick="genAuditLocal()"><div class="more-row-label">🔍 Governance audit trail</div><div class="more-row-icon">→</div></div>
+    </div>
+    <div class="more-section">
+      <div class="more-section-title">CIPC filing guide</div>
+      <div class="card">${CIPC.map(f=>`<div style="padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:12px"><strong>${esc(f.name)}</strong> (${esc(f.form)}) — ${esc(f.due)}</div>`).join('')}</div>
+    </div>`;
+}
+
+function editDL(key){
+  const dl=S.distLists[key];
+  openModal(`
+    <div class="modal-header"><div class="modal-title">${dl.icon||''} ${dl.label}</div><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div style="margin-bottom:12px">
+      <button class="toggle-btn ${dl.active?'toggle-on-email':'toggle-off'}" onclick="toggleDLApp('${key}')">${dl.active?'ON — Click to disable':'OFF — Click to enable'}</button>
+    </div>
+    <div class="field"><label>Email addresses (comma-separated)</label>
+    <textarea id="dlEmails" rows="3" style="width:100%;padding:10px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none">${esc(dl.emails||'')}</textarea></div>
+    <button onclick="saveDL('${key}')" style="width:100%;padding:12px;background:#0D9488;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer">Save</button>`);
+}
+function toggleDLApp(key){S.distLists[key].active=!S.distLists[key].active;renderTab();closeModal();}
+function saveDL(key){
+  S.distLists[key].emails=document.getElementById('dlEmails')?.value||'';
+  closeModal();renderTab();showToast('Saved ✓');
+}
+function editCustomDL(i){
+  const dl=S.customDistLists[i];
+  openModal(`
+    <div class="modal-header"><div class="modal-title">${dl.icon||'📁'} ${esc(dl.name)}</div><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div style="margin-bottom:12px"><button class="toggle-btn ${dl.active?'toggle-on-email':'toggle-off'}" onclick="S.customDistLists[${i}].active=!S.customDistLists[${i}].active;closeModal();editCustomDL(${i})">${dl.active?'ON — Click to disable':'OFF — Click to enable'}</button></div>
+    <div class="field"><label>Email addresses (comma-separated)</label>
+    <textarea id="customDlEmails" rows="3" style="width:100%;padding:10px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none">${esc(dl.emails||'')}</textarea></div>
+    <button onclick="S.customDistLists[${i}].emails=document.getElementById('customDlEmails').value;closeModal();renderTab();showToast('Saved ✓')" style="width:100%;padding:12px;background:#0D9488;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer">Save</button>`);
+}
+function composeWA(id){
+  const g=S.waGroups.find(x=>x.id===id);
+  if(!g)return;
+  openModal(`
+    <div class="modal-header"><div class="modal-title">${g.icon||'💬'} ${esc(g.name)}</div><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <textarea id="waMsgMore" rows="6" style="width:100%;padding:10px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none" placeholder="Type your message..."></textarea>
+    <button onclick="sendWA(${JSON.stringify(g.numbers||'').replace(/"/g,'&quot;')})" style="width:100%;padding:12px;background:#25D366;color:#fff;border:none;border-radius:10px;font-weight:700;margin-top:10px;cursor:pointer">💬 Send to ${esc(g.name)}</button>`);
+}
+function openConflictReg(){
+  const items=S.conflictReg.map(c=>`<div style="padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:13px"><strong>${esc(c.member)}</strong> — ${esc(c.desc)}<div style="font-size:11px;color:#94a3b8">${esc(c.at)}</div></div>`).join('');
+  openModal(`
+    <div class="modal-header"><div class="modal-title">⚖️ Conflict of Interest Register</div><button class="modal-close" onclick="closeModal()">✕</button></div>
+    ${items||'<div style="color:#94a3b8;font-size:13px;padding:12px 0">No declarations on record.</div>'}
+    <button onclick="addConflict()" style="width:100%;padding:12px;background:#F59E0B;border:none;border-radius:10px;font-weight:700;margin-top:12px;cursor:pointer">+ Add declaration</button>`);
+}
+function addConflict(){
+  const member=prompt('Member name:');if(!member)return;
+  const desc=prompt('Describe the conflict:');if(!desc)return;
+  S.conflictReg.push({id:uid(),member,desc,at:today()+' '+nowTime()});
+  openConflictReg();
+}
+function genDirPackLocal(){
+  const name=prompt('Director name:');
+  if(!name)return;
+  printDoc('Director Onboarding Pack',genDirPack(name,S.profile||{},S.exco));
+}
+function genAuditLocal(){
+  printDoc('Governance Audit Trail',buildAudit(S.sessions,S.resolutions,S.allActions,S.profile||{}));
+}
+
+function genDirPack(name,P,exco){
+  const fw=INDS[P.ind]?.fw||P.fw||[];
+  return`<h2>Director Onboarding Pack</h2><h3>Welcome, ${esc(name)}</h3><p>Welcome to the board of <strong>${esc(P.nm||'the company')}</strong>. This pack provides an introduction to your role and governance obligations.</p><h3>Company Overview</h3><p><strong>Company:</strong> ${esc(P.nm||'')} | <strong>Sector:</strong> ${esc(INDS[P.ind]?.reg||P.ind||'')} | <strong>Size:</strong> ${esc(P.sz||'')} | <strong>Province:</strong> ${esc(P.cty||'')}</p><h3>Regulatory Frameworks</h3><ul>${fw.map(f=>`<li>${esc(f)}</li>`).join('')}</ul><h3>Your Director Duties</h3><p>As a director you are bound by the Companies Act 71 of 2008, specifically s75 (conflicts of interest) and s76 (standards of conduct). You must act in good faith, in the best interests of the company, with due care and skill.</p><h3>Leadership Team</h3><ul>${exco.map(e=>`<li><strong>${esc(e.role)}:</strong> ${esc(e.dn||'Vacant')}</li>`).join('')}</ul>`;
+}
+
+function buildAudit(sessions,resolutions,allActions,P){
+  return`<h2>Governance Audit Trail</h2><h3>${esc(P.nm||'Company')}</h3><p><strong>Regulator:</strong> ${esc(INDS[P.ind]?.reg||'CIPC')} | <strong>Sector:</strong> ${esc(P.ind||'')} | <strong>Province:</strong> ${esc(P.cty||'')}</p><h3>Meetings (${sessions.length})</h3>${sessions.map(s=>`<div><strong>${esc(s.ref)}</strong> — ${esc(MT[s.meetingType]?.label||'')} · ${esc(s.date)} · ${s.agendaItems?.filter(i=>i.qr?.pass).length||0} resolutions</div>`).join('')}<h3>Resolutions (${resolutions.length})</h3>${resolutions.map(r=>`<div style="margin-bottom:8px">RESOLVED THAT: ${esc(r.text)} <em>(${esc(r.date)} · ${esc(r.ref)})</em></div>`).join('')}<h3>Actions (${allActions.length})</h3>${allActions.map(a=>`<div style="margin-bottom:4px">${esc(a.action)} — <strong>${esc(a.owner)}</strong> — ${esc(a.status)}</div>`).join('')}`;
+}
+
+// ═══════════════════════════════════════════
+// NOTICE MODAL
+// ═══════════════════════════════════════════
+function openNoticeModal(){
+  const venue=prompt('Venue or platform (e.g. Zoom, Board Room):');
+  if(!venue)return;
+  printDoc('Meeting Notice',genNotice(S.activeSession,S.agendaItems,S.profile||{},venue));
+}
+
+// ═══════════════════════════════════════════
+// SUPPORT MODAL
+// ═══════════════════════════════════════════
+let supportType='bug';
+// ═══════════════════════════════════════════
+// CONTACT US (carried in the top bar on every screen)
+// ═══════════════════════════════════════════
+function openContactUs(){
+  openModal(`
+    <div class="modal-header"><div class="modal-title">📞 Contact Us</div><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="contact-row">
+      <div><div class="contact-row-label">💬 Send feedback or report a bug</div><div class="contact-row-sub">Bugs, ideas, or compliments</div></div>
+      <button class="contact-row-action" onclick="closeModal();openSupport()">Open</button>
+    </div>
+    <div class="contact-row">
+      <div><div class="contact-row-label">📧 Email us directly</div><div class="contact-row-sub">vinay@mybizexco.co.za</div></div>
+      <a class="contact-row-action" href="mailto:vinay@mybizexco.co.za">Email</a>
+    </div>
+    <div class="contact-row">
+      <div><div class="contact-row-label">🕐 Response time</div><div class="contact-row-sub">We respond within 24 hours</div></div>
+    </div>`);
+}
+
+function openSupport(){
+  openModal(`
+    <div class="modal-header"><div class="modal-title">💬 Feedback & Support</div><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">
+      <button onclick="setSupportType('bug',this)" style="padding:9px 4px;border-radius:10px;border:2px solid #F59E0B;background:#fffbeb;font-size:11px;font-weight:700;cursor:pointer">🐛 Bug</button>
+      <button onclick="setSupportType('suggest',this)" style="padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:11px;font-weight:700;cursor:pointer">💡 Idea</button>
+      <button onclick="setSupportType('compliment',this)" style="padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:11px;font-weight:700;cursor:pointer">⭐ Love</button>
+    </div>
+    <textarea id="supportMsg" rows="5" style="width:100%;padding:12px;border:1px solid #e2e8f0;border-radius:10px;font-size:14px;outline:none;margin-bottom:12px" placeholder="Describe the bug, what happened and which screen you were on..."></textarea>
+    <a id="supportLink" href="mailto:vinay@mybizexco.co.za?subject=MyBizExco%3A%20bug&body=" onclick="buildSupportEmail()" style="display:block;width:100%;padding:14px;background:#F59E0B;color:#000;font-weight:800;font-size:15px;border-radius:12px;text-align:center;text-decoration:none">Send feedback →</a>
+    <div style="font-size:11px;color:#94a3b8;text-align:center;margin-top:8px">Sent to vinay@mybizexco.co.za · We respond within 24 hours</div>`);
+  supportType='bug';
+}
+function setSupportType(type,btn){
+  supportType=type;
+  document.querySelectorAll('[onclick^="setSupportType"]').forEach(b=>{
+    b.style.borderColor='#e2e8f0';b.style.background='#fff';
+  });
+  if(btn){btn.style.borderColor='#F59E0B';btn.style.background='#fffbeb';}
+}
+function buildSupportEmail(){
+  const msg=document.getElementById('supportMsg')?.value||'';
+  const link=document.getElementById('supportLink');
+  if(link) link.href=`mailto:vinay@mybizexco.co.za?subject=${encodeURIComponent('MyBizExco: '+supportType)}&body=${encodeURIComponent(msg)}`;
+}
+
+// ═══════════════════════════════════════════
+// VOICE
+// ═══════════════════════════════════════════
+function toggleVoice(){S.voiceOn=!S.voiceOn;updateTopbar();showToast(S.voiceOn?'Voice on 🔊':'Voice off 🔇');}
+function speak(text){
+  if(!S.voiceOn||!window.speechSynthesis)return;
+  window.speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang='en-ZA';u.rate=0.9;window.speechSynthesis.speak(u);
+}
+
+// ═══════════════════════════════════════════
+// SAVE / RESTORE
+// ═══════════════════════════════════════════
+function saveData(){
+  const data={version:'v7',exportedAt:new Date().toISOString(),
+    profile:S.profile,exco:S.exco,sessions:S.sessions,allActions:S.allActions,
+    resolutions:S.resolutions,distLists:S.distLists,waGroups:S.waGroups,
+    conflictReg:S.conflictReg,savedTmpls:S.savedTmpls,
+    documents:S.documents,customDistLists:S.customDistLists,
+    commsItems:S.commsItems,fwSummaries:S.fwSummaries,leadershipLog:S.leadershipLog};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='MyBizExco-'+(S.profile?.nm||'Session').replace(/\s+/g,'-')+'-'+today().replace(/ /g,'-')+'.json';
+  a.click();
+  showToast('Governance file saved ✓');
+}
+function restoreSession(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const d=JSON.parse(ev.target.result);
+      if(d.profile)S.profile=d.profile;
+      if(d.exco)S.exco=d.exco;
+      if(d.sessions)S.sessions=d.sessions;
+      if(d.allActions)S.allActions=d.allActions;
+      if(d.resolutions)S.resolutions=d.resolutions;
+      if(d.distLists)S.distLists=d.distLists;
+      if(d.waGroups)S.waGroups=d.waGroups;
+      if(d.conflictReg)S.conflictReg=d.conflictReg;
+      if(d.savedTmpls)S.savedTmpls=d.savedTmpls;
+      if(d.documents)S.documents=d.documents;
+      if(d.customDistLists)S.customDistLists=d.customDistLists;
+      if(d.commsItems)S.commsItems=d.commsItems;
+      if(d.fwSummaries)S.fwSummaries=d.fwSummaries;
+      if(d.leadershipLog)S.leadershipLog=d.leadershipLog;
+      if(d.profile){
+        S.exco=S.exco.map(e=>({...e,dn:e.dn||e.role}));
+        S.attendees=[...S.exco.map(e=>({...e,present:true})),
+          {id:'ceo',role:'CEO',dn:S.profile.ceoName||S.profile.nm,color:'#111',bg:'#f0f0f0',present:true}];
+        S.govRem=calcGovRem(S.profile);
+        S.launched=true;
+        show('app');switchTab('home');
+        showToast('Restored: '+S.sessions.length+' meetings ✓');
+      }
+    }catch(err){showToast('Invalid file');}
+  };
+  reader.readAsText(file);
+}
+
+</script>
+</body>
+</html>
