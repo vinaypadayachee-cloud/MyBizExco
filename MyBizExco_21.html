@@ -895,7 +895,7 @@ function buildAgenda(sessions, allActions, govRem, meetingType) {
 }
 
 // ── AI ANALYSIS ──
-const API_URL = "https://api.anthropic.com/v1/messages";
+const API_URL = "/api/claude";
 async function callAPI(prompt, max = 400) {
   const r = await fetch(API_URL, {
     method: "POST",
