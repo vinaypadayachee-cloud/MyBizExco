@@ -4,6 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
 <title>MyBizExco</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f7f7f7;color:#111;font-size:15px;line-height:1.5}
@@ -24,6 +25,10 @@ input,textarea,select{font-family:inherit;font-size:14px}
 .w-card-body{font-size:11px;color:rgba(255,255,255,0.5);line-height:1.4}
 .btn-primary{background:#F59E0B;color:#000;font-weight:800;font-size:15px;border:none;border-radius:12px;padding:16px 24px;width:100%;max-width:420px;margin-bottom:10px}
 .btn-outline{background:transparent;color:rgba(255,255,255,0.7);font-weight:600;font-size:14px;border:1px solid rgba(255,255,255,0.2);border-radius:12px;padding:13px 24px;width:100%;max-width:420px}
+/* AUTH */
+#auth{background:#f8fafc;min-height:100vh;overflow-y:auto;-webkit-overflow-scrolling:touch;display:none;padding:16px}
+#auth.active{display:block}
+#auth .auth-card{max-width:420px;margin:40px auto 0;background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:22px}
 /* SETUP */
 #setup{background:#f8fafc;height:100vh;overflow-y:auto;-webkit-overflow-scrolling:touch;display:none}
 #setup.active{display:block}
@@ -267,9 +272,18 @@ input:focus{border-color:#F59E0B!important;box-shadow:0 0 0 2px rgba(245,158,11,
     <div class="w-card"><div class="w-card-icon" id="flagCardIcon">🇿🇦</div><div class="w-card-title">SA Law</div><div class="w-card-body">17 sectors, all regulators built in</div></div>
     <div class="w-card"><div class="w-card-icon">📋</div><div class="w-card-title">Minutes</div><div class="w-card-body">Boardroom-ready minutes instantly</div></div>
   </div>
-  <button class="btn-primary" onclick="startSetup()">🚀 Set up my business — takes 5 minutes</button>
-  <button class="btn-outline" onclick="document.getElementById('restoreFile').click()">📂 Restore a saved session</button>
+  <button class="btn-primary" onclick="goToAuth('signup')">🚀 Set up my business — takes 5 minutes</button>
+  <button class="btn-outline" onclick="goToAuth('signin')">👋 I already have an account — Sign in</button>
+  <button class="btn-outline" onclick="document.getElementById('restoreFile').click()">📂 Restore a saved session (manual backup)</button>
   <input type="file" id="restoreFile" accept=".json" style="display:none" onchange="restoreSession(event)"/>
+</div>
+
+<!-- AUTH SCREEN -->
+<div id="auth">
+  <div class="auth-card">
+    <div class="w-logo" style="color:#111;text-align:center;font-size:28px">MyBiz<span>Exco</span></div>
+    <div id="authBody"></div>
+  </div>
 </div>
 
 <!-- SETUP WIZARD -->
@@ -326,6 +340,17 @@ window.onerror = function(msg, src, line, col, err) {
 };
 
 // ═══════════════════════════════════════════
+// SUPABASE CONFIG
+// SUPABASE_PUBLISHABLE_KEY is a publishable key (Supabase's replacement
+// naming for the legacy "anon" key) — it is designed to be exposed in
+// browser JS. It grants no access beyond what RLS policies allow.
+// Client wiring only at this stage — no auth or data calls yet.
+// ═══════════════════════════════════════════
+const SUPABASE_URL = "https://xqkcjurfvhzpehdawint.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_Hv48ZAC0TG1gMz6D23f2XQ_Yd9NmWGb";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+// ═══════════════════════════════════════════
 // COUNTRY CONFIG (swap this block for other country versions)
 // ═══════════════════════════════════════════
 const COUNTRY = { flag: "🇿🇦", name: "South Africa", demonym: "SA" };
@@ -373,6 +398,7 @@ function goToSection(key){
     return;
   }
   if(!S.launched){
+    if(!S.currentUser){ goToAuth('signup'); return; }
     show('setup');
     S.step = SETUP_STEP_OF[key] || 1;
     renderStep();
@@ -1153,7 +1179,10 @@ let S = {
   sessionOpen:false, activeSession:null, agendaItems:[], attendees:[],
   meetingType:'board', meetingContext:'', financials:{revenue:'',expenses:''},
   pendingDocs:[], tab:'home', voiceOn:false, sessRef:0,
-  govRem:[], showSupport:false
+  govRem:[], showSupport:false,
+  // auth
+  authMode:'signup', authEmail:'', authPassword:'', authName:'',
+  authError:null, authBusy:false, currentUser:null, currentOrgId:null, currentRole:null
 };
 
 // ═══════════════════════════════════════════
@@ -1183,7 +1212,7 @@ function closeModal(e){
 // SCREENS
 // ═══════════════════════════════════════════
 function show(id){
-  ['welcome','setup','app'].forEach(s=>{
+  ['welcome','auth','setup','app'].forEach(s=>{
     const el=document.getElementById(s);
     el.classList.remove('active');
   });
@@ -1195,6 +1224,122 @@ function show(id){
 }
 
 function startSetup(){S.step=1;S.topActiveKey='about';show('setup');renderStep();}
+
+// ═══════════════════════════════════════════
+// AUTH (Supabase Auth — email/password)
+// ═══════════════════════════════════════════
+function goToAuth(mode){
+  S.authMode=mode; S.authError=null; S.authEmail=''; S.authPassword=''; S.authName='';
+  show('auth'); renderAuthBody();
+}
+function toggleAuthMode(){
+  S.authMode = S.authMode==='signin' ? 'signup' : 'signin';
+  S.authError=null;
+  renderAuthBody();
+}
+function renderAuthScreen(){
+  const isSignup = S.authMode!=='signin';
+  return `
+    <div class="step-title" style="text-align:center">${isSignup?'Create your account':'Welcome back'}</div>
+    <div class="step-sub" style="text-align:center">${isSignup?'Takes 30 seconds. Your data is scoped to your organisation only.':'Sign in to continue to your organisation.'}</div>
+    ${S.authError?`<div class="info-box" style="background:#fef2f2;border-color:#fca5a5;margin-top:14px"><div class="info-box-icon">⚠️</div><div><div class="info-box-title" style="color:#dc2626">Error</div><div class="info-box-body">${esc(S.authError)}</div></div></div>`:''}
+    <div class="field" style="margin-top:16px"><label>Email<span class="req">Required</span></label><input id="auth_email" type="email" value="${esc(S.authEmail)}" oninput="S.authEmail=this.value" placeholder="you@company.co.za"/></div>
+    <div class="field"><label>Password<span class="req">Required</span></label><input id="auth_password" type="password" value="${esc(S.authPassword)}" oninput="S.authPassword=this.value" placeholder="At least 6 characters"/></div>
+    ${isSignup?`<div class="field"><label>Your name<span class="req">Required</span></label><input id="auth_name" value="${esc(S.authName)}" oninput="S.authName=this.value" placeholder="e.g. Vinay Padayachee"/></div>`:''}
+    <button class="btn-next" style="width:100%" ${S.authBusy?'disabled':''} onclick="${isSignup?'submitSignUp()':'submitSignIn()'}">${S.authBusy?'Please wait…':(isSignup?'Create account →':'Sign in →')}</button>
+    <button class="btn-back" style="width:100%;margin-top:8px" onclick="toggleAuthMode()">${isSignup?'Already have an account? Sign in':"Don't have an account? Create one"}</button>
+    <button class="btn-back" style="width:100%;margin-top:8px;border:none" onclick="show('welcome')">← Back</button>
+  `;
+}
+function renderAuthBody(){
+  const el=document.getElementById('authBody');
+  if(el) el.innerHTML=renderAuthScreen();
+}
+async function submitSignUp(){
+  if(!S.authEmail||!S.authPassword||!S.authName){ S.authError='Please fill in all fields.'; renderAuthBody(); return; }
+  if(S.authPassword.length<6){ S.authError='Password must be at least 6 characters.'; renderAuthBody(); return; }
+  S.authBusy=true; S.authError=null; renderAuthBody();
+  try{
+    const { data, error } = await sb.auth.signUp({ email: S.authEmail, password: S.authPassword });
+    if(error) throw error;
+    const user = data.user;
+    if(!user) throw new Error('Sign up did not return a user. If email confirmation is required, please check your inbox then sign in.');
+    if(!data.session){
+      // Email confirmation required before a session exists — profile creation
+      // (which needs an authenticated session for the RLS check) must wait.
+      S.authBusy=false;
+      S.authMode='signin';
+      S.authError='Account created. Please check your email to confirm, then sign in.';
+      renderAuthBody();
+      return;
+    }
+    const { error: profileError } = await sb.from('profiles').insert({ id: user.id, full_name: S.authName, email: S.authEmail });
+    if(profileError) throw profileError;
+    S.currentUser = user;
+    S.authBusy=false;
+    startSetup();
+  } catch(e){
+    S.authBusy=false;
+    S.authError = e.message || String(e);
+    renderAuthBody();
+  }
+}
+async function submitSignIn(){
+  if(!S.authEmail||!S.authPassword){ S.authError='Please enter your email and password.'; renderAuthBody(); return; }
+  S.authBusy=true; S.authError=null; renderAuthBody();
+  try{
+    const { data, error } = await sb.auth.signInWithPassword({ email: S.authEmail, password: S.authPassword });
+    if(error) throw error;
+    S.currentUser = data.user;
+    await routeAfterAuth();
+  } catch(e){
+    S.authBusy=false;
+    S.authError = e.message || String(e);
+    renderAuthBody();
+  }
+}
+// Decide where an authenticated user lands: their existing organisation, or
+// the setup wizard if they don't have one yet. (Full data hydration from
+// Supabase into S for an existing org is wired in a later stage — for now
+// this establishes S.currentOrgId/currentRole correctly and unblocks testing.)
+async function routeAfterAuth(){
+  S.authBusy=false;
+  try{
+    const { data: memberships, error } = await sb.from('org_members')
+      .select('organisation_id, role')
+      .eq('profile_id', S.currentUser.id)
+      .eq('is_active', true)
+      .limit(1);
+    if(error) throw error;
+    if(memberships && memberships.length){
+      S.currentOrgId = memberships[0].organisation_id;
+      S.currentRole = memberships[0].role;
+      showToast('Signed in ✓');
+      startSetup(); // TODO(stage: data hydration): load existing org data and show('app') instead
+    } else {
+      startSetup();
+    }
+  } catch(e){
+    S.authError = 'Signed in, but could not check your organisation: ' + (e.message||e);
+    renderAuthBody();
+  }
+}
+async function signOut(){
+  await sb.auth.signOut();
+  location.reload();
+}
+async function initApp(){
+  try{
+    const { data } = await sb.auth.getSession();
+    if(data && data.session && data.session.user){
+      S.currentUser = data.session.user;
+      await routeAfterAuth();
+    }
+  } catch(e){
+    // No existing session, or a transient error checking it — fall back to
+    // the default static welcome screen, no error surfaced to a first-time visitor.
+  }
+}
 
 // ═══════════════════════════════════════════
 // SETUP WIZARD
@@ -1249,6 +1394,27 @@ function renderStepAbout(){
     <div class="step-sub">Everything you need to know before you begin.</div>
     <div class="info-box"><div class="info-box-icon">🤖</div><div><div class="info-box-title">What it does</div><div class="info-box-body">MyBizExco gives every South African SMME an AI-powered Exco: CFO, COO, CRO, CHRO & CTO voices that deliberate your real decisions, produce boardroom-ready minutes, track actions, and keep a defensible governance audit trail — at a fraction of the cost of a traditional advisory retainer, with no equity given up.</div></div></div>
     <div class="info-box"><div class="info-box-icon">🧭</div><div><div class="info-box-title">How to use it</div><div class="info-box-body">Complete the tabs above in order — Business, Compliance, Leadership, Decision Rules, Communication, Meeting Types — then press Launch. Afterwards, jump straight to any tab, any time, from any page using the bar at the top.</div></div></div>
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title">Why MyBizExco Exists</div>
+      <div class="faq-item">
+        <div class="faq-q">Why MyBizExco Exists</div>
+        <div class="faq-a">Most SMME owners in South Africa are making every decision alone. No board to challenge their thinking, no CFO to catch the cash-flow risk, no compliance officer to flag the regulation they didn't know applied to them — just one person, carrying the full weight of a business that other people's livelihoods depend on. That isolation is not a personality problem. It is a structural one: proper governance and expert advice have always been priced for companies far larger than theirs. MyBizExco exists to close that gap — not by simplifying governance until it's watered down, but by making real executive-level thinking available to a business of any size, at a price it can actually afford.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Who It Changes, and How</div>
+        <div class="faq-a">The owner stops carrying every decision alone, and starts making better ones — faster, and with fewer blind spots. That single shift compounds outward. A business that survives its first hard years keeps its staff employed. Staff who keep their jobs support families, spend in their local economy, and build the kind of financial stability that becomes generational rather than month-to-month. Customers get a business that's still there next year, still improving. Multiply that across thousands of SMMEs — the backbone of South Africa's economy — and MyBizExco isn't just helping individual businesses. It's strengthening the foundation the whole economy stands on.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">What the World Looks Like When It Exists</div>
+        <div class="faq-a"><ul style="margin:0;padding-left:18px;line-height:1.65">
+          <li>Owners lead with confidence, not guesswork — every major decision is stress-tested before it's made, not corrected after</li>
+          <li>Jobs last — businesses fail less often from preventable governance and strategy mistakes</li>
+          <li>Wealth compounds outward — from owner, to staff, to families, to community</li>
+          <li>South Africa's SMME economy gets structurally stronger — not business by business, but at scale</li>
+          <li>Good governance becomes normal, not a luxury — no longer reserved for companies large enough to afford a boardroom</li>
+        </ul></div>
+      </div>
+    </div>
     <div class="card" style="margin-bottom:16px">
       <div class="card-title">Frequently asked questions</div>
       ${FAQS.map(f=>`<div class="faq-item"><div class="faq-q">${esc(f.q)}</div><div class="faq-a">${esc(f.a)}</div></div>`).join('')}
@@ -1578,8 +1744,18 @@ function removeDoc(i){S.documents.splice(i,1);renderStep();}
 function addCustomDl(){
   const inp=document.getElementById('newDlName');
   if(!inp||!inp.value.trim())return;
-  S.customDistLists.push({id:'dl_'+Date.now(),name:inp.value.trim(),emails:'',active:true,icon:'📁'});
+  const name=inp.value.trim();
+  const entry={id:'dl_'+Date.now(),name,emails:'',active:true,icon:'📁'};
+  S.customDistLists.push(entry);
   renderStep();
+  if(S.currentUser && S.currentOrgId){
+    sb.from('distribution_lists').insert({
+      organisation_id:S.currentOrgId, list_name:name, channel:'email', is_custom:true
+    }).select().single().then(({data,error})=>{
+      if(error) console.warn('distribution_lists insert failed:',error.message);
+      else entry.dbId=data.id;
+    });
+  }
 }
 function toggleCustomDL(i){S.customDistLists[i].active=!S.customDistLists[i].active;renderStep();}
 function addCustomDlEmail(i){
@@ -1623,7 +1799,7 @@ function addWaGroup(){
 // ═══════════════════════════════════════════
 // LAUNCH
 // ═══════════════════════════════════════════
-function launchApp(){
+async function launchApp(){
   const fw=[...(INDS[S.ind]?.fw||[]),...(S.ar?[S.ar]:[])];
   S.profile={nm:S.nm||'My Business',ceoName:S.ceoName||S.nm||'Owner',sz:S.sz,rev:S.rev,
     cty:S.cty,prio:S.prioList.filter(p=>p&&p.trim()).map((p,i)=>(i+1)+'. '+p).join(' | '),fin:S.fin,ar:S.ar,ind:S.ind,fw,quorum:S.quorum,
@@ -1632,6 +1808,50 @@ function launchApp(){
   S.attendees=[...S.exco.map(e=>({...e,present:true})),
     {id:'ceo',role:'CEO',dn:S.profile.ceoName,color:'#111',bg:'#f0f0f0',present:true}];
   S.govRem=calcGovRem(S.profile);
+
+  // Persist the organisation to Supabase if the user is authenticated (the
+  // normal path now that auth gates the wizard). Falls back to local-only
+  // state on any failure, matching this app's existing graceful-degradation
+  // pattern elsewhere (e.g. the AI deliberation offline fallback) — a save
+  // failure here should not lock the user out of the app they just set up.
+  //
+  // Known gap: the wizard's Leadership Team names are people who have not
+  // signed up themselves, so they cannot yet be inserted as real org_members
+  // rows (which require a real profiles/auth.users row). That requires an
+  // invite flow, not built in this stage — for now they remain local-only
+  // display data, same as before.
+  if(S.currentUser){
+    try{
+      // Organisation + owner membership are created atomically via an RPC
+      // (see supabase/004_fix_org_bootstrap.sql) rather than two separate
+      // inserts — a plain insert().select() on organisations fails its own
+      // RLS SELECT-policy check because the owner's org_members row doesn't
+      // exist yet at that instant (chicken-and-egg), confirmed via live testing.
+      const { data: org, error: orgError } = await sb.rpc('create_organisation_with_owner', {
+        org_name: S.profile.nm,
+        org_sector: S.ind,
+        org_country_code: 'ZA',
+        org_registration_number: S.regNo || null
+      });
+      if(orgError) throw orgError;
+      S.currentOrgId = org.id;
+      S.currentRole = 'owner';
+
+      // Create the default distribution lists row-per-category. Note:
+      // distribution_list_members is NOT wired — this app models each list's
+      // recipients as a single free-text emails string (S.distLists[key].emails),
+      // not as links to individual org_members rows, so there is no real
+      // per-member data to insert into that join table.
+      const { data: dlRows, error: dlError } = await sb.from('distribution_lists').insert(
+        DIST_ORDER.map(key=>({ organisation_id: org.id, list_name: DL_DEF[key].label, channel:'email', is_custom:false }))
+      ).select();
+      if(dlError) throw dlError;
+      DIST_ORDER.forEach((key,i)=>{ if(S.distLists[key]) S.distLists[key].dbId = dlRows[i]?.id; });
+    } catch(e){
+      showToast('Could not save your organisation to the server — continuing locally: ' + (e.message||e));
+    }
+  }
+
   S.launched=true;
   S.meetingType=S.defaultMeetingType||'board';
   show('app');
@@ -1826,17 +2046,51 @@ function openTmplModal(){
 
 function useTmpl(items){openSession(items);}
 
-function openSession(tmplItems){
+// Maps this app's internal meeting-type keys to the schema's meeting_type
+// CHECK constraint values. NOTE: the schema's allowed set (shareholder,
+// board, subcommittee, exco, management, coffee_exco) has no dedicated value
+// for this app's 'agm' or 'special' types — they are mapped to the closest
+// conceptual match below (agm->shareholder, special->board) as a stopgap.
+// This is a real product decision to flag, not just a technical mapping:
+// storing a Special Board Meeting as plain 'board' loses the
+// urgent/ad-hoc distinction in any server-side reporting. Consider
+// expanding the schema's check constraint to include 'agm' and 'special'
+// as first-class values instead.
+const DB_MEETING_TYPE = {
+  board:'board', exco:'exco', shareholder:'shareholder',
+  coffee:'coffee_exco', subcom:'subcommittee', mgmt:'management',
+  agm:'shareholder', special:'board'
+};
+
+async function openSession(tmplItems){
   S.sessRef++;
   const ds=today(), ts=nowTime();
   const ref=S.meetingType.toUpperCase()+'-'+ds.replace(/ /g,'-')+'-'+String(S.sessRef).padStart(3,'0');
   const items=tmplItems?tmplItems.map(t=>({id:uid(),text:t,type:'template',checked:false})):buildAgenda(S.sessions,S.allActions,S.govRem,S.meetingType);
   S.agendaItems=items;
-  S.activeSession={id:S.sessRef,ref,date:ds,time:ts,meetingType:S.meetingType,meetingContext:S.meetingContext,co:S.profile?.nm||'',ind:S.profile?.ind||''};
+  S.activeSession={id:S.sessRef,ref,date:ds,time:ts,meetingType:S.meetingType,meetingContext:S.meetingContext,co:S.profile?.nm||'',ind:S.profile?.ind||'',dbId:null};
   S.sessionOpen=true;
   S.pendingDocs=[];
   renderTab();
   showToast((MT[S.meetingType]?.label||'Meeting')+' opened — '+items.length+' items');
+
+  if(S.currentUser && S.currentOrgId){
+    try{
+      const dbType = DB_MEETING_TYPE[S.meetingType] || 'board';
+      const { data: meeting, error } = await sb.from('meetings').insert({
+        organisation_id: S.currentOrgId,
+        meeting_type: dbType,
+        subcommittee_name: S.meetingType==='subcom' ? (S.subcomName||null) : null,
+        title: (MT[S.meetingType]?.label || 'Meeting') + ' — ' + ref,
+        status: 'open',
+        created_by: S.currentUser.id
+      }).select().single();
+      if(error) throw error;
+      if(S.activeSession) S.activeSession.dbId = meeting.id;
+    } catch(e){
+      showToast('Meeting opened locally, but could not save to server: ' + (e.message||e));
+    }
+  }
 }
 
 function renderSession(){
@@ -1973,15 +2227,22 @@ async function deliberate(id){
   const P=S.profile||{};
   const fw=INDS[P.ind]?.fw||P.fw||[];
   const results=[];
+  const dbMeetingId=S.activeSession?.dbId;
+  const canLog = S.currentUser && S.currentOrgId && dbMeetingId;
   for(const e of S.exco){
+    let usedLive=true, responseText='';
     try{
       const prompt=detPrompt(e.role,e.focus||'Governance',item.text,P,fw,S.meetingContext);
       const raw=await callAPI(prompt,500);
+      responseText=raw;
       const clean=raw.replace(/```json|```/g,'').trim();
       const parsed=JSON.parse(clean);
       results.push({role:e.role,dn:e.dn||e.role,...parsed});
     }catch(err){
-      results.push(deterministicAnalysis(e.role,e.focus,item.text,P));
+      usedLive=false;
+      const fallback=deterministicAnalysis(e.role,e.focus,item.text,P);
+      results.push(fallback);
+      responseText=fallback.analysis;
     }
     S.agendaItems[idx].rs=[...results];
     renderTab();
@@ -1989,12 +2250,25 @@ async function deliberate(id){
       const last=results[results.length-1];
       speak((last.dn||last.role)+' says: '+last.analysis);
     }
+    if(canLog){
+      // Fire-and-forget: logged in the background so the deliberation pace
+      // (already network-bound on the AI call itself) isn't slowed further.
+      sb.from('ai_deliberation_log').insert({
+        organisation_id:S.currentOrgId, meeting_id:dbMeetingId,
+        persona:e.role, used_web_search:false,
+        prompt_summary:item.text.slice(0,200),
+        response_summary:String(responseText).slice(0,500),
+        model_used:usedLive?'claude-sonnet-4-6':'deterministic-fallback'
+      }).then(({error})=>{ if(error) console.warn('ai_deliberation_log insert failed:',error.message); });
+    }
     await new Promise(r=>setTimeout(r,100));
   }
   // Synthesis
+  let synResponseText='', synUsedLive=true;
   try{
     const sp=synPrompt(item.text,results,P);
     const raw=await callAPI(sp,800);
+    synResponseText=raw;
     const clean=raw.replace(/```json|```/g,'').trim();
     const syn=JSON.parse(clean);
     S.agendaItems[idx].syn=syn;
@@ -2004,11 +2278,28 @@ async function deliberate(id){
       syn.next_steps.forEach(step=>{
         S.allActions.push({id:uid(),action:step,owner:S.exco[0]?.dn||'Exco',
           due:'30 days',priority:'Medium',status:'Open',ref:S.activeSession?.ref||'',date:today()});
+        if(S.currentUser && S.currentOrgId){
+          sb.from('actions').insert({
+            organisation_id:S.currentOrgId, meeting_id:dbMeetingId||null,
+            description:step, status:'open', priority:'medium',
+            created_by:S.currentUser.id
+          }).then(({error})=>{ if(error) console.warn('actions insert failed:',error.message); });
+        }
       });
     }
   }catch(e){
+    synUsedLive=false;
     S.agendaItems[idx].qr={pass:true,reason:'Majority support'};
     S.agendaItems[idx].syn={synthesis:'Board reviewed the item.',recommendation:'Proceed with implementation.',risks:[]};
+  }
+  if(canLog){
+    sb.from('ai_deliberation_log').insert({
+      organisation_id:S.currentOrgId, meeting_id:dbMeetingId,
+      persona:'Board Synthesis', used_web_search:false,
+      prompt_summary:item.text.slice(0,200),
+      response_summary:String(synResponseText||S.agendaItems[idx].syn?.synthesis||'').slice(0,500),
+      model_used:synUsedLive?'claude-sonnet-4-6':'deterministic-fallback'
+    }).then(({error})=>{ if(error) console.warn('ai_deliberation_log insert (synthesis) failed:',error.message); });
   }
   S.agendaItems[idx].loading=false;
   renderTab();
@@ -2035,6 +2326,26 @@ function closeMeeting(){
   const mtLabel=(MT[finalSession.meetingType]||MT.board).label;
   S.commsItems.push({id:uid(),name:mtLabel+' Minutes — '+finalSession.ref,type:'Minutes (draft — v1)',icon:'📋',addedAt:today()});
   S.commsItems.push({id:uid(),name:mtLabel+' Action List — '+finalSession.ref,type:'Action list',icon:'✅',addedAt:today()});
+  if(S.currentUser && S.currentOrgId && S.activeSession?.dbId){
+    const dbMeetingId=S.activeSession.dbId;
+    const usedAI=S.agendaItems.some(i=>!!i.syn);
+    sb.from('meetings').update({status:'closed', closed_at:new Date().toISOString(), ai_deliberation_used:usedAI})
+      .eq('id', dbMeetingId).then(({error})=>{ if(error) console.warn('meetings update failed:',error.message); });
+    sb.from('meeting_minutes_versions').insert({
+      meeting_id:dbMeetingId, version_number:1, content:draftText,
+      status:'draft', authored_by:S.currentUser.id
+    }).then(({error})=>{ if(error) console.warn('meeting_minutes_versions insert failed:',error.message); });
+    // The seven schema factor_* columns don't map to this app's local scoring
+    // breakdown (govScoreBreakdown() uses different categories) — only the
+    // overall score is recorded for now, with the local breakdown kept in
+    // notes rather than fabricating per-factor numbers that don't correspond
+    // to what the column names claim.
+    const overall=govScore(S.sessions,S.resolutions,S.allActions,S.profile);
+    sb.from('governance_scores').insert({
+      organisation_id:S.currentOrgId, overall_score:overall,
+      notes:'Local breakdown: '+JSON.stringify(govScoreBreakdown(S.sessions,S.resolutions,S.allActions,S.profile).items.map(i=>({label:i.label,pts:i.pts,max:i.max})))
+    }).then(({error})=>{ if(error) console.warn('governance_scores insert failed:',error.message); });
+  }
   S.sessionOpen=false;
   S.activeSession=null;
   S.agendaItems=[];
@@ -2501,6 +2812,11 @@ function restoreSession(e){
   };
   reader.readAsText(file);
 }
+
+// ═══════════════════════════════════════════
+// BOOTSTRAP
+// ═══════════════════════════════════════════
+initApp();
 
 </script>
 </body>
