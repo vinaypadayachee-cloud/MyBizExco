@@ -922,11 +922,14 @@ function buildAgenda(sessions, allActions, govRem, meetingType) {
 
 // ── AI ANALYSIS ──
 const API_URL = "/api/claude";
-async function callAPI(prompt, max = 400) {
+async function callAPI(prompt, max = 400, callType = 'exec') {
+  const { data: sessionData } = await sb.auth.getSession();
+  const token = sessionData?.session?.access_token;
   const r = await fetch(API_URL, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
+      ...(token ? { "Authorization": "Bearer " + token } : {})
     },
     body: JSON.stringify({
       model: "claude-sonnet-4-6",
@@ -934,9 +937,17 @@ async function callAPI(prompt, max = 400) {
       messages: [{
         role: "user",
         content: prompt
-      }]
+      }],
+      mbxCallType: callType
     })
   });
+  if (r.status === 402) {
+    const d = await r.json().catch(() => ({}));
+    const err = new Error('usage_limit_reached');
+    err.quotaBlocked = true;
+    err.tier = d.tier || null;
+    throw err;
+  }
   const d = await r.json();
   return d.content?.[0]?.text || "";
 }
@@ -2217,6 +2228,21 @@ function saveTmpl(){
 // ═══════════════════════════════════════════
 // AI DELIBERATION
 // ═══════════════════════════════════════════
+function showUpgradeModal(tier){
+  const copy = tier==='free'
+    ? {title:'Your free meeting is used up', body:'The free plan includes one fully AI-deliberated board meeting. Upgrade to Pro or Business to keep using AI deliberation for future meetings.'}
+    : tier==='pro'
+    ? {title:'Monthly AI deliberation limit reached', body:'Your Pro plan includes 30 AI-deliberated agenda items per calendar month. Upgrade to Business for a higher monthly limit, or wait until next month’s reset.'}
+    : tier==='business'
+    ? {title:'Monthly AI deliberation limit reached', body:'Your Business plan includes 100 AI-deliberated agenda items per calendar month. Your limit resets at the start of next month.'}
+    : {title:'AI deliberation limit reached', body:'Your organisation has reached its AI deliberation limit for this plan.'};
+  openModal(`
+    <div class="modal-header"><div class="modal-title">🔒 ${esc(copy.title)}</div><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div style="font-size:13px;color:#374151;line-height:1.5">${esc(copy.body)}</div>
+    <div style="font-size:12px;color:#94a3b8;margin-top:10px">You can still run this meeting manually — add resolutions and minutes without AI deliberation.</div>
+    <button class="btn-next" style="width:100%;margin-top:16px" onclick="closeModal()">Got it</button>
+  `);
+}
 async function deliberate(id){
   const idx=S.agendaItems.findIndex(x=>x.id===id);
   if(idx<0)return;
@@ -2233,12 +2259,18 @@ async function deliberate(id){
     let usedLive=true, responseText='';
     try{
       const prompt=detPrompt(e.role,e.focus||'Governance',item.text,P,fw,S.meetingContext);
-      const raw=await callAPI(prompt,500);
+      const raw=await callAPI(prompt,500,'exec');
       responseText=raw;
       const clean=raw.replace(/```json|```/g,'').trim();
       const parsed=JSON.parse(clean);
       results.push({role:e.role,dn:e.dn||e.role,...parsed});
     }catch(err){
+      if(err?.quotaBlocked){
+        S.agendaItems[idx].loading=false;
+        renderTab();
+        showUpgradeModal(err.tier);
+        return;
+      }
       usedLive=false;
       const fallback=deterministicAnalysis(e.role,e.focus,item.text,P);
       results.push(fallback);
@@ -2267,7 +2299,7 @@ async function deliberate(id){
   let synResponseText='', synUsedLive=true;
   try{
     const sp=synPrompt(item.text,results,P);
-    const raw=await callAPI(sp,800);
+    const raw=await callAPI(sp,800,'synthesis');
     synResponseText=raw;
     const clean=raw.replace(/```json|```/g,'').trim();
     const syn=JSON.parse(clean);
@@ -2288,6 +2320,12 @@ async function deliberate(id){
       });
     }
   }catch(e){
+    if(e?.quotaBlocked){
+      S.agendaItems[idx].loading=false;
+      renderTab();
+      showUpgradeModal(e.tier);
+      return;
+    }
     synUsedLive=false;
     S.agendaItems[idx].qr={pass:true,reason:'Majority support'};
     S.agendaItems[idx].syn={synthesis:'Board reviewed the item.',recommendation:'Proceed with implementation.',risks:[]};
@@ -2330,7 +2368,17 @@ function closeMeeting(){
     const dbMeetingId=S.activeSession.dbId;
     const usedAI=S.agendaItems.some(i=>!!i.syn);
     sb.from('meetings').update({status:'closed', closed_at:new Date().toISOString(), ai_deliberation_used:usedAI})
-      .eq('id', dbMeetingId).then(({error})=>{ if(error) console.warn('meetings update failed:',error.message); });
+      .eq('id', dbMeetingId).then(({error})=>{
+        if(error){ console.warn('meetings update failed:',error.message); return; }
+        // Ends a free-tier org's lifetime trial once a meeting that actually
+        // used AI deliberation is closed — chained after the update above so
+        // the RPC (which reads meetings.ai_deliberation_used) never races
+        // against this same write.
+        if(usedAI){
+          sb.rpc('mark_free_meeting_used', {p_meeting_id: dbMeetingId})
+            .then(({error})=>{ if(error) console.warn('mark_free_meeting_used failed:',error.message); });
+        }
+      });
     sb.from('meeting_minutes_versions').insert({
       meeting_id:dbMeetingId, version_number:1, content:draftText,
       status:'draft', authored_by:S.currentUser.id
