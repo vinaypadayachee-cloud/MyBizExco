@@ -2298,7 +2298,7 @@ async function deliberate(id){
   // Synthesis
   let synResponseText='', synUsedLive=true;
   try{
-    const sp=synPrompt(item.text,results,P);
+    const sp=synPrompt(item.text,results,P,fw);
     const raw=await callAPI(sp,800,'synthesis');
     synResponseText=raw;
     const clean=raw.replace(/```json|```/g,'').trim();
