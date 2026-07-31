@@ -987,19 +987,6 @@ function evalQuorum(results, P) {
     reason: sup + " of " + results.length + " support"
   };
 }
-function deterministicAnalysis(role, id, focus, item) {
-  const h = Array.from(item + role).reduce((a, c) => (a << 5) - a + c.charCodeAt(0), 0);
-  const v = ["support", "caution", "oppose"][Math.abs(h) % 3];
-  return {
-    id,
-    role,
-    focus,
-    verdict: v,
-    reason: v === "support" ? "This initiative aligns with our strategic objectives." : v === "caution" ? "This proposal requires careful risk assessment before proceeding." : "I have significant concerns about the risks involved.",
-    analysis: "As " + role + ", I have reviewed this matter carefully in the context of our regulatory obligations. The proposal has merit but requires thorough due diligence. We should ensure full compliance with applicable frameworks before proceeding."
-  };
-}
-
 // ── NOTICE GENERATOR ──
 function genNotice(P, meetingType, items, venue, ds, ts, ref) {
   const mt = MT[meetingType] || MT.exco;
@@ -2243,6 +2230,14 @@ function showUpgradeModal(tier){
     <button class="btn-next" style="width:100%;margin-top:16px" onclick="closeModal()">Got it</button>
   `);
 }
+function showUnavailableModal(){
+  openModal(`
+    <div class="modal-header"><div class="modal-title">⚠️ AI deliberation unavailable</div><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div style="font-size:13px;color:#374151;line-height:1.5">We couldn't reach the AI deliberation service just now. Nothing was recorded — please try again.</div>
+    <div style="font-size:12px;color:#94a3b8;margin-top:10px">You can still run this meeting manually — add resolutions and minutes without AI deliberation.</div>
+    <button class="btn-next" style="width:100%;margin-top:16px" onclick="closeModal()">Got it</button>
+  `);
+}
 async function deliberate(id){
   const idx=S.agendaItems.findIndex(x=>x.id===id);
   if(idx<0)return;
@@ -2255,8 +2250,19 @@ async function deliberate(id){
   const results=[];
   const dbMeetingId=S.activeSession?.dbId;
   const canLog = S.currentUser && S.currentOrgId && dbMeetingId;
+  // On any genuine failure (not a quota block) we abort the whole
+  // deliberation rather than substitute a fabricated answer -- a governance
+  // decision must never be computed from votes/analysis nobody actually
+  // gave. The item resets to its pre-deliberation state so "Deliberate"
+  // can just be clicked again.
+  const abortUnavailable=()=>{
+    S.agendaItems[idx].loading=false;
+    S.agendaItems[idx].rs=[];
+    renderTab();
+    showUnavailableModal();
+  };
   for(const e of S.exco){
-    let usedLive=true, responseText='';
+    let responseText='';
     try{
       const prompt=detPrompt(e.role,e.focus||'Governance',item.text,P,fw,S.meetingContext);
       const raw=await callAPI(prompt,500,'exec');
@@ -2271,10 +2277,8 @@ async function deliberate(id){
         showUpgradeModal(err.tier);
         return;
       }
-      usedLive=false;
-      const fallback=deterministicAnalysis(e.role,e.focus,item.text,P);
-      results.push(fallback);
-      responseText=fallback.analysis;
+      abortUnavailable();
+      return;
     }
     S.agendaItems[idx].rs=[...results];
     renderTab();
@@ -2290,13 +2294,13 @@ async function deliberate(id){
         persona:e.role, used_web_search:false,
         prompt_summary:item.text.slice(0,200),
         response_summary:String(responseText).slice(0,500),
-        model_used:usedLive?'claude-sonnet-4-6':'deterministic-fallback'
+        model_used:'claude-sonnet-4-6'
       }).then(({error})=>{ if(error) console.warn('ai_deliberation_log insert failed:',error.message); });
     }
     await new Promise(r=>setTimeout(r,100));
   }
   // Synthesis
-  let synResponseText='', synUsedLive=true;
+  let synResponseText='';
   try{
     const sp=synPrompt(item.text,results,P,fw);
     const raw=await callAPI(sp,800,'synthesis');
@@ -2326,17 +2330,16 @@ async function deliberate(id){
       showUpgradeModal(e.tier);
       return;
     }
-    synUsedLive=false;
-    S.agendaItems[idx].qr={pass:true,reason:'Majority support'};
-    S.agendaItems[idx].syn={synthesis:'Board reviewed the item.',recommendation:'Proceed with implementation.',risks:[]};
+    abortUnavailable();
+    return;
   }
   if(canLog){
     sb.from('ai_deliberation_log').insert({
       organisation_id:S.currentOrgId, meeting_id:dbMeetingId,
       persona:'Board Synthesis', used_web_search:false,
       prompt_summary:item.text.slice(0,200),
-      response_summary:String(synResponseText||S.agendaItems[idx].syn?.synthesis||'').slice(0,500),
-      model_used:synUsedLive?'claude-sonnet-4-6':'deterministic-fallback'
+      response_summary:String(synResponseText).slice(0,500),
+      model_used:'claude-sonnet-4-6'
     }).then(({error})=>{ if(error) console.warn('ai_deliberation_log insert (synthesis) failed:',error.message); });
   }
   S.agendaItems[idx].loading=false;
