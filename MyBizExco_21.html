@@ -1205,6 +1205,17 @@ function closeModal(e){
   if(!e||e.target===document.getElementById('modalOverlay'))
     document.getElementById('modalOverlay').classList.remove('open');
 }
+// Shared blocking error for any governance-record write that fails
+// (organisation/priorities creation, meeting close, minutes, actions).
+// Deliberately not a toast -- the point is the user cannot miss it and
+// local state must not silently advance to a "looks done" state.
+function showSaveErrorModal(title, body){
+  openModal(`
+    <div class="modal-header"><div class="modal-title">⚠️ ${esc(title)}</div><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div style="font-size:13px;color:#374151;line-height:1.5">${esc(body)}</div>
+    <button class="btn-next" style="width:100%;margin-top:16px" onclick="closeModal()">Got it</button>
+  `);
+}
 
 // ═══════════════════════════════════════════
 // SCREENS
@@ -1296,10 +1307,9 @@ async function submitSignIn(){
     renderAuthBody();
   }
 }
-// Decide where an authenticated user lands: their existing organisation, or
-// the setup wizard if they don't have one yet. (Full data hydration from
-// Supabase into S for an existing org is wired in a later stage — for now
-// this establishes S.currentOrgId/currentRole correctly and unblocks testing.)
+// Decide where an authenticated user lands: their existing organisation
+// (fully hydrated from Supabase), or the setup wizard if they don't have
+// one yet.
 async function routeAfterAuth(){
   S.authBusy=false;
   try{
@@ -1312,8 +1322,26 @@ async function routeAfterAuth(){
     if(memberships && memberships.length){
       S.currentOrgId = memberships[0].organisation_id;
       S.currentRole = memberships[0].role;
+      // Hydration failure is deliberately NOT caught by the outer catch and
+      // does NOT fall through to startSetup() -- doing so would show a blank
+      // wizard indistinguishable from a genuinely new account, risking the
+      // user re-completing setup and creating a second, duplicate
+      // organisation. Stay put and make the failure impossible to miss instead.
+      try{
+        await hydrateOrgData(S.currentOrgId);
+      }catch(hydrateErr){
+        showSaveErrorModal('Could not load your organisation', 'We signed you in, but could not load your organisation’s data from the server: ' + (hydrateErr.message||hydrateErr) + '. Please refresh the page to try again.');
+        return;
+      }
+      S.exco=S.exco.map(e=>({...e,dn:e.dn||e.role}));
+      S.attendees=[...S.exco.map(e=>({...e,present:true})),
+        {id:'ceo',role:'CEO',dn:S.profile.ceoName,color:'#111',bg:'#f0f0f0',present:true}];
+      S.govRem=calcGovRem(S.profile);
+      S.launched=true;
+      S.meetingType=S.defaultMeetingType||'board';
+      show('app');
+      switchTab('home');
       showToast('Signed in ✓');
-      startSetup(); // TODO(stage: data hydration): load existing org data and show('app') instead
     } else {
       startSetup();
     }
@@ -1807,18 +1835,17 @@ async function launchApp(){
     {id:'ceo',role:'CEO',dn:S.profile.ceoName,color:'#111',bg:'#f0f0f0',present:true}];
   S.govRem=calcGovRem(S.profile);
 
-  // Persist the organisation to Supabase if the user is authenticated (the
-  // normal path now that auth gates the wizard). Falls back to local-only
-  // state on any failure, matching this app's existing graceful-degradation
-  // pattern elsewhere (e.g. the AI deliberation offline fallback) — a save
-  // failure here should not lock the user out of the app they just set up.
-  //
   // Known gap: the wizard's Leadership Team names are people who have not
   // signed up themselves, so they cannot yet be inserted as real org_members
   // rows (which require a real profiles/auth.users row). That requires an
   // invite flow, not built in this stage — for now they remain local-only
   // display data, same as before.
   if(S.currentUser){
+    // Organisation + owner membership + business priorities are the
+    // foundational governance record for this org. This is NOT best-effort:
+    // if any of it fails, the launch has not actually completed, so we stop
+    // here with a clear, blocking error rather than silently proceeding into
+    // the app as if setup had succeeded.
     try{
       // Organisation + owner membership are created atomically via an RPC
       // (see supabase/004_fix_org_bootstrap.sql) rather than two separate
@@ -1829,24 +1856,46 @@ async function launchApp(){
         org_name: S.profile.nm,
         org_sector: S.ind,
         org_country_code: 'ZA',
-        org_registration_number: S.regNo || null
+        org_registration_number: S.regNo || null,
+        org_ceo_name: S.profile.ceoName,
+        org_company_size: S.sz,
+        org_province: S.cty,
+        org_revenue_band: S.rev,
+        org_financial_context: S.fin,
+        org_additional_regulator: S.ar || null,
+        org_incorporation_date: S.incDate || null,
+        org_quorum_cfo_veto: S.quorum.cfoVeto,
+        org_quorum_cro_veto: S.quorum.croVeto,
+        org_quorum_cto_veto: S.quorum.ctoVeto,
+        org_quorum_majority: S.quorum.majority
       });
       if(orgError) throw orgError;
       S.currentOrgId = org.id;
       S.currentRole = 'owner';
 
-      // Create the default distribution lists row-per-category. Note:
-      // distribution_list_members is NOT wired — this app models each list's
-      // recipients as a single free-text emails string (S.distLists[key].emails),
-      // not as links to individual org_members rows, so there is no real
-      // per-member data to insert into that join table.
+      const priorities = S.prioList.filter(p=>p&&p.trim());
+      if(priorities.length){
+        const { error: prioError } = await sb.from('business_priorities').insert(
+          priorities.map((p,i)=>({ organisation_id: org.id, sequence_number: i+1, description: p.trim(), created_by: S.currentUser.id }))
+        );
+        if(prioError) throw prioError;
+      }
+    } catch(e){
+      showSaveErrorModal('Could not create your organisation', 'We could not save your organisation to the server: ' + (e.message||e) + '. Please try again.');
+      return;
+    }
+
+    // Default distribution lists are best-effort setup config, not part of
+    // the core governance record (this whole subsystem is still a known,
+    // deferred gap — see the schema-gap list) — a failure here doesn't block launch.
+    try{
       const { data: dlRows, error: dlError } = await sb.from('distribution_lists').insert(
-        DIST_ORDER.map(key=>({ organisation_id: org.id, list_name: DL_DEF[key].label, channel:'email', is_custom:false }))
+        DIST_ORDER.map(key=>({ organisation_id: S.currentOrgId, list_name: DL_DEF[key].label, channel:'email', is_custom:false }))
       ).select();
       if(dlError) throw dlError;
       DIST_ORDER.forEach((key,i)=>{ if(S.distLists[key]) S.distLists[key].dbId = dlRows[i]?.id; });
     } catch(e){
-      showToast('Could not save your organisation to the server — continuing locally: ' + (e.message||e));
+      console.warn('distribution_lists insert failed:', e.message||e);
     }
   }
 
@@ -2059,6 +2108,90 @@ const DB_MEETING_TYPE = {
   coffee:'coffee_exco', subcom:'subcommittee', mgmt:'management',
   agm:'shareholder', special:'board'
 };
+// Reverse of the above for hydration. Lossy in the same way DB_MEETING_TYPE
+// is lossy: a stored 'shareholder' meeting is always read back as local key
+// 'shareholder', never 'agm', since the schema has no distinct value for it.
+const DB_MEETING_TYPE_REVERSE = {
+  board:'board', exco:'exco', shareholder:'shareholder',
+  coffee_exco:'coffee', subcommittee:'subcom', management:'mgmt'
+};
+
+function fmtDateFrom(iso){
+  if(!iso) return '';
+  const d=new Date(iso);
+  return d.getDate()+" "+["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getMonth()]+" "+d.getFullYear();
+}
+function fmtTimeFrom(iso){
+  if(!iso) return '';
+  const d=new Date(iso);
+  return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
+}
+
+// Loads an existing organisation's data from Supabase into local state S —
+// the read half of the persistence cutover (writes were wired first). Called
+// once per sign-in via routeAfterAuth()/initApp(). Reconstructs closed
+// meetings into the same "session" shape closeMeeting() builds locally, with
+// known, disclosed gaps: no per-item AI verdict cards (those live in
+// ai_deliberation_log as audit trail, not meant for live re-render), no
+// attendees/financials/meetingContext (already baked into the stored minutes
+// text, and not independently persisted), and no named Exco roster (blocked
+// on the same missing invite-flow as meeting_attendees/leadership_change_log).
+async function hydrateOrgData(orgId){
+  const [orgRes, prioRes, meetingsRes, actionsRes, distRes] = await Promise.all([
+    sb.from('organisations').select('*').eq('id', orgId).single(),
+    sb.from('business_priorities').select('*').eq('organisation_id', orgId).order('sequence_number'),
+    sb.from('meetings').select('*, meeting_minutes_versions(*), resolutions(*)').eq('organisation_id', orgId).order('created_at'),
+    sb.from('actions').select('*').eq('organisation_id', orgId).order('created_at'),
+    sb.from('distribution_lists').select('*').eq('organisation_id', orgId)
+  ]);
+  const firstError = [orgRes, prioRes, meetingsRes, actionsRes, distRes].map(r=>r.error).find(Boolean);
+  if(firstError) throw firstError;
+
+  const org = orgRes.data;
+  const fw=[...(INDS[org.sector]?.fw||[]),...(org.additional_regulator?[org.additional_regulator]:[])];
+  S.profile={
+    nm: org.name, ceoName: org.ceo_name||org.name, sz: org.company_size, rev: org.revenue_band,
+    cty: org.province, prio: (prioRes.data||[]).map(p=>p.sequence_number+'. '+p.description).join(' | '),
+    fin: org.financial_context, ar: org.additional_regulator, ind: org.sector, fw,
+    quorum:{cfoVeto:org.quorum_cfo_veto, croVeto:org.quorum_cro_veto, ctoVeto:org.quorum_cto_veto, majority:org.quorum_majority},
+    regNo: org.registration_number, incorporationDate: org.incorporation_date
+  };
+
+  S.resolutions=[];
+  S.sessions=(meetingsRes.data||[]).map(m=>{
+    const versions=(m.meeting_minutes_versions||[]).slice().sort((a,b)=>a.version_number-b.version_number);
+    const resolutionsForMeeting=(m.resolutions||[]);
+    resolutionsForMeeting.forEach(r=>{
+      S.resolutions.push({id:r.id, text:r.resolution_text, date:fmtDateFrom(r.passed_at), ref:m.title});
+    });
+    return {
+      dbId: m.id,
+      ref: m.title,
+      date: fmtDateFrom(m.closed_at||m.created_at),
+      time: fmtTimeFrom(m.closed_at||m.created_at),
+      meetingType: DB_MEETING_TYPE_REVERSE[m.meeting_type]||'board',
+      closedAt: m.closed_at,
+      minutesStatus: versions.some(v=>v.status==='confirmed') ? 'confirmed' : 'draft',
+      minutesVersions: versions.map(v=>({v:v.version_number, text:v.content, by:'Team', at:fmtDateFrom(v.created_at)+' '+fmtTimeFrom(v.created_at), confirmed:v.status==='confirmed'})),
+      agendaItems: resolutionsForMeeting.map(r=>({id:r.id, text:r.resolution_text, type:'standing', checked:true, rs:[], qr:{pass:true, reason:r.quorum_reason||''}, syn:null})),
+      attendees:[], documents:[], financials:{revenue:'',expenses:''}, meetingContext:''
+    };
+  });
+
+  S.allActions=(actionsRes.data||[]).map(a=>({
+    id:a.id, action:a.description, owner:a.owner_label||'Exco',
+    due:a.due_date||'30 days', priority:a.priority?a.priority[0].toUpperCase()+a.priority.slice(1):'Medium',
+    status:(a.status==='completed'||a.status==='cancelled')?'Closed':'Open',
+    ref:(S.sessions.find(s=>s.dbId===a.meeting_id)||{}).ref||'Manual', date:fmtDateFrom(a.created_at),
+    closeNote:a.close_note||null, dbId:a.id
+  }));
+
+  (distRes.data||[]).forEach(row=>{
+    const key=DIST_ORDER.find(k=>DL_DEF[k].label===row.list_name && !row.is_custom);
+    if(key && S.distLists[key]){ S.distLists[key].dbId=row.id; }
+    else if(row.is_custom){ S.customDistLists.push({id:'dl_'+row.id, dbId:row.id, name:row.list_name, emails:'', active:true, icon:'📁'}); }
+  });
+}
 
 async function openSession(tmplItems){
   S.sessRef++;
@@ -2309,19 +2442,40 @@ async function deliberate(id){
     const syn=JSON.parse(clean);
     S.agendaItems[idx].syn=syn;
     S.agendaItems[idx].qr=evalQuorum(results,S.profile?.quorum||S.quorum);
-    // Capture actions
+    // Capture actions. These are still a governance record worth surfacing
+    // failures for, but unlike the meeting-close writes, a save failure here
+    // doesn't invalidate an otherwise-successful deliberation -- so this is a
+    // non-blocking toast, not an aborting modal. The action is always kept
+    // locally either way.
     if(syn.next_steps?.length){
-      syn.next_steps.forEach(step=>{
-        S.allActions.push({id:uid(),action:step,owner:S.exco[0]?.dn||'Exco',
-          due:'30 days',priority:'Medium',status:'Open',ref:S.activeSession?.ref||'',date:today()});
-        if(S.currentUser && S.currentOrgId){
+      const localActions=syn.next_steps.map(step=>({id:uid(),action:step,owner:S.exco[0]?.dn||'Exco',
+        due:'30 days',priority:'Medium',status:'Open',ref:S.activeSession?.ref||'',date:today(),meetingDbId:dbMeetingId||null}));
+      localActions.forEach(a=>S.allActions.push(a));
+      if(S.currentUser && S.currentOrgId){
+        const results=await Promise.allSettled(localActions.map(a=>
           sb.from('actions').insert({
             organisation_id:S.currentOrgId, meeting_id:dbMeetingId||null,
-            description:step, status:'open', priority:'medium',
-            created_by:S.currentUser.id
-          }).then(({error})=>{ if(error) console.warn('actions insert failed:',error.message); });
+            description:a.action, status:'open', priority:'medium',
+            owner_label:a.owner, created_by:S.currentUser.id
+          }).select().single()
+        ));
+        let failCount=0;
+        results.forEach((r,idx)=>{
+          if(r.status==='fulfilled' && !r.value.error){ localActions[idx].dbId=r.value.data?.id; }
+          else{
+            failCount++;
+            localActions[idx].saveFailed=true;
+            console.warn('actions insert failed:', r.status==='fulfilled'?r.value.error?.message:r.reason);
+          }
+        });
+        if(failCount>0){
+          // The toast is a moment-in-time nudge, not the actual safeguard --
+          // saveFailed:true on the action itself is, since it renders a
+          // persistent badge (see renderActions()) that survives navigating
+          // away, and gives a way to actually fix it (retryActionSave).
+          showToast(failCount+' action(s) could not be saved to the server — see Actions tab.');
         }
-      });
+      }
     }
   }catch(e){
     if(e?.quotaBlocked){
@@ -2349,54 +2503,78 @@ async function deliberate(id){
 // ═══════════════════════════════════════════
 // CLOSE MEETING
 // ═══════════════════════════════════════════
-function closeMeeting(){
+async function closeMeeting(){
   const warnings=chkQ(S.attendees,S.agendaItems,S.profile?.quorum||S.quorum);
   if(warnings.length){
     if(!confirm('WARNING: '+warnings.join(', ')+'\n\nClose anyway?'))return;
   }
   const passed=S.agendaItems.filter(i=>i.qr?.pass);
-  passed.forEach(item=>{
-    S.resolutions.push({id:uid(),text:item.text,date:today(),ref:S.activeSession?.ref||''});
-  });
   const draftText=stripTags(buildMins({...S.activeSession,agendaItems:S.agendaItems,attendees:S.attendees,financials:S.financials},S.exco,S.profile||{}));
   const finalSession={...S.activeSession,agendaItems:S.agendaItems,attendees:S.attendees,
     documents:S.pendingDocs,financials:S.financials,meetingContext:S.meetingContext,closedAt:nowTime(),
     minutesStatus:'draft',
     minutesVersions:[{v:1,text:draftText,by:S.profile?.ceoName||'CEO',at:today()+' '+nowTime()}]};
-  S.sessions.push(finalSession);
-  const mtLabel=(MT[finalSession.meetingType]||MT.board).label;
-  S.commsItems.push({id:uid(),name:mtLabel+' Minutes — '+finalSession.ref,type:'Minutes (draft — v1)',icon:'📋',addedAt:today()});
-  S.commsItems.push({id:uid(),name:mtLabel+' Action List — '+finalSession.ref,type:'Action list',icon:'✅',addedAt:today()});
+
+  // Closing a meeting is the core governance record for this whole app --
+  // meetings status, minutes, and resolutions must all actually land on the
+  // server before we tell the user the meeting is closed. Local state is
+  // only committed (and the meeting only leaves the "open" screen) after
+  // these succeed; on failure the meeting stays open so the user can retry,
+  // instead of the UI silently moving on while the record never saved.
   if(S.currentUser && S.currentOrgId && S.activeSession?.dbId){
     const dbMeetingId=S.activeSession.dbId;
     const usedAI=S.agendaItems.some(i=>!!i.syn);
-    sb.from('meetings').update({status:'closed', closed_at:new Date().toISOString(), ai_deliberation_used:usedAI})
-      .eq('id', dbMeetingId).then(({error})=>{
-        if(error){ console.warn('meetings update failed:',error.message); return; }
-        // Ends a free-tier org's lifetime trial once a meeting that actually
-        // used AI deliberation is closed — chained after the update above so
-        // the RPC (which reads meetings.ai_deliberation_used) never races
-        // against this same write.
-        if(usedAI){
-          sb.rpc('mark_free_meeting_used', {p_meeting_id: dbMeetingId})
-            .then(({error})=>{ if(error) console.warn('mark_free_meeting_used failed:',error.message); });
-        }
+    try{
+      const { error: meetingError } = await sb.from('meetings')
+        .update({status:'closed', closed_at:new Date().toISOString(), ai_deliberation_used:usedAI})
+        .eq('id', dbMeetingId);
+      if(meetingError) throw meetingError;
+
+      const { error: minutesError } = await sb.from('meeting_minutes_versions').insert({
+        meeting_id:dbMeetingId, version_number:1, content:draftText,
+        status:'draft', authored_by:S.currentUser.id
       });
-    sb.from('meeting_minutes_versions').insert({
-      meeting_id:dbMeetingId, version_number:1, content:draftText,
-      status:'draft', authored_by:S.currentUser.id
-    }).then(({error})=>{ if(error) console.warn('meeting_minutes_versions insert failed:',error.message); });
+      if(minutesError) throw minutesError;
+
+      if(passed.length){
+        const { error: resError } = await sb.from('resolutions').insert(
+          passed.map(item=>({ organisation_id:S.currentOrgId, meeting_id:dbMeetingId, resolution_text:item.text, quorum_reason:item.qr?.reason||null }))
+        );
+        if(resError) throw resError;
+      }
+    }catch(e){
+      showSaveErrorModal('Could not close the meeting', 'We could not save the meeting close, minutes, or resolutions to the server: ' + (e.message||e) + '. The meeting is still open — please try closing again.');
+      return;
+    }
+
+    // Ends a free-tier org's lifetime trial once a meeting that actually
+    // used AI deliberation is closed. Best-effort: the meeting is already
+    // genuinely closed above regardless of this succeeding.
+    if(usedAI){
+      sb.rpc('mark_free_meeting_used', {p_meeting_id: dbMeetingId})
+        .then(({error})=>{ if(error) console.warn('mark_free_meeting_used failed:',error.message); });
+    }
     // The seven schema factor_* columns don't map to this app's local scoring
     // breakdown (govScoreBreakdown() uses different categories) — only the
     // overall score is recorded for now, with the local breakdown kept in
     // notes rather than fabricating per-factor numbers that don't correspond
-    // to what the column names claim.
-    const overall=govScore(S.sessions,S.resolutions,S.allActions,S.profile);
+    // to what the column names claim. Best-effort/audit-trail only: the live
+    // score displayed to the user is always recomputed from sessions/
+    // resolutions/actions, never read back from this table.
+    const overall=govScore([...S.sessions,finalSession],[...S.resolutions,...passed.map(i=>({text:i.text}))],S.allActions,S.profile);
     sb.from('governance_scores').insert({
       organisation_id:S.currentOrgId, overall_score:overall,
-      notes:'Local breakdown: '+JSON.stringify(govScoreBreakdown(S.sessions,S.resolutions,S.allActions,S.profile).items.map(i=>({label:i.label,pts:i.pts,max:i.max})))
+      notes:'Local breakdown: '+JSON.stringify(govScoreBreakdown([...S.sessions,finalSession],[...S.resolutions,...passed.map(i=>({text:i.text}))],S.allActions,S.profile).items.map(i=>({label:i.label,pts:i.pts,max:i.max})))
     }).then(({error})=>{ if(error) console.warn('governance_scores insert failed:',error.message); });
   }
+
+  passed.forEach(item=>{
+    S.resolutions.push({id:uid(),text:item.text,date:today(),ref:S.activeSession?.ref||''});
+  });
+  S.sessions.push(finalSession);
+  const mtLabel=(MT[finalSession.meetingType]||MT.board).label;
+  S.commsItems.push({id:uid(),name:mtLabel+' Minutes — '+finalSession.ref,type:'Minutes (draft — v1)',icon:'📋',addedAt:today()});
+  S.commsItems.push({id:uid(),name:mtLabel+' Action List — '+finalSession.ref,type:'Action list',icon:'✅',addedAt:today()});
   S.sessionOpen=false;
   S.activeSession=null;
   S.agendaItems=[];
@@ -2464,19 +2642,46 @@ function editMinutes(i){
       <button onclick="confirmMinutes(${i})" style="padding:12px;background:#059669;color:#fff;border:none;border-radius:10px;font-weight:800;font-size:13px;cursor:pointer">✓ Confirm & Store</button>
     </div>`);
 }
-function saveMinutesDraft(i){
+async function saveMinutesDraft(i){
   const text=document.getElementById('minutesEditArea')?.value||'';
   const sess=S.sessions[i];
+  const versionNumber=(sess.minutesVersions?.length||0)+1;
+  if(S.currentUser && S.currentOrgId && sess.dbId){
+    try{
+      const { error } = await sb.from('meeting_minutes_versions').insert({
+        meeting_id: sess.dbId, version_number: versionNumber, content: text,
+        status: 'draft', authored_by: S.currentUser.id
+      });
+      if(error) throw error;
+    }catch(e){
+      showSaveErrorModal('Could not save draft', 'We could not save this minutes draft to the server: ' + (e.message||e) + '. Please try again.');
+      return;
+    }
+  }
   if(!sess.minutesVersions)sess.minutesVersions=[];
-  sess.minutesVersions.push({v:sess.minutesVersions.length+1,text,by:S.profile?.ceoName||'CEO',at:today()+' '+nowTime()});
+  sess.minutesVersions.push({v:versionNumber,text,by:S.profile?.ceoName||'CEO',at:today()+' '+nowTime()});
   sess.minutesStatus='draft';
   closeModal();renderTab();showToast('Draft saved as new version ✓');
 }
-function confirmMinutes(i){
+async function confirmMinutes(i){
   const text=document.getElementById('minutesEditArea')?.value||'';
   const sess=S.sessions[i];
+  const versionNumber=(sess.minutesVersions?.length||0)+1;
+  if(S.currentUser && S.currentOrgId && sess.dbId){
+    try{
+      const { error } = await sb.from('meeting_minutes_versions').insert({
+        meeting_id: sess.dbId, version_number: versionNumber, content: text,
+        status: 'confirmed', authored_by: S.currentUser.id,
+        confirmed_by: S.currentUser.id, confirmed_at: new Date().toISOString()
+      });
+      if(error) throw error;
+    }catch(e){
+      showSaveErrorModal('Could not confirm minutes', 'We could not save the confirmed minutes to the server: ' + (e.message||e) + '. Please try again.');
+      return;
+    }
+  }
   if(!sess.minutesVersions)sess.minutesVersions=[];
-  sess.minutesVersions.push({v:sess.minutesVersions.length+1,text,by:S.profile?.ceoName||'CEO',at:today()+' '+nowTime(),confirmed:true});
+  sess.minutesVersions.push({v:versionNumber,text,by:S.profile?.ceoName||'CEO',at:today()+' '+nowTime(),confirmed:true});
   sess.minutesStatus='confirmed';
   closeModal();renderTab();showToast('Minutes confirmed & stored — ready to send ✓');
 }
@@ -2572,6 +2777,10 @@ function renderActions(){
       </div>`:''}
       ${a.attachedDoc?`<div style="font-size:11px;color:#0f766e;margin-top:6px">📎 ${esc(a.attachedDoc.name)} attached${a.attachedDoc.sizeLabel?' ('+esc(a.attachedDoc.sizeLabel)+')':''}</div>`:''}
       ${a.closeNote?`<div style="font-size:12px;color:#64748b;margin-top:6px;padding:6px 8px;background:#f8fafc;border-radius:6px">${esc(a.closeNote)}</div>`:''}
+      ${a.saveFailed?`<div style="font-size:12px;color:#dc2626;background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;padding:6px 8px;margin-top:6px;display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <span>⚠️ Not saved to server</span>
+        <button onclick="retryActionSave('${a.id}')" style="background:#dc2626;color:#fff;border:none;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:700;cursor:pointer">Retry save</button>
+      </div>`:''}
     </div>`;
   return`
     <div class="info-box"><div class="info-box-icon">✅</div><div><div class="info-box-title">Action register</div><div class="info-box-body">Actions captured from AI deliberations. Tap Close to complete or AI Draft to generate an artifact.</div></div></div>
@@ -2580,9 +2789,39 @@ function renderActions(){
     ${closed.length?`<div style="font-size:12px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin:12px 0 8px">Closed (${closed.length})</div>${closed.map(renderAct).join('')}`:''}`;
 }
 
-function closeAction(id){
+async function retryActionSave(id){
+  const action=S.allActions.find(a=>a.id===id);
+  if(!action || !S.currentUser || !S.currentOrgId) return;
+  try{
+    const { data, error } = await sb.from('actions').insert({
+      organisation_id:S.currentOrgId, meeting_id:action.meetingDbId||null,
+      description:action.action, status:'open', priority:'medium',
+      owner_label:action.owner, created_by:S.currentUser.id
+    }).select().single();
+    if(error) throw error;
+    action.dbId=data.id;
+    action.saveFailed=false;
+    renderTab();
+    showToast('Action saved ✓');
+  }catch(e){
+    showSaveErrorModal('Could not save action', 'We still could not save this action to the server: ' + (e.message||e) + '. Please try again.');
+  }
+}
+async function closeAction(id){
   const note=prompt('Closing note (what was done?):');
   if(note===null)return;
+  const action=S.allActions.find(a=>a.id===id);
+  if(S.currentUser && S.currentOrgId && action?.dbId){
+    try{
+      const { error } = await sb.from('actions').update({
+        status:'completed', completed_at:new Date().toISOString(), close_note:note
+      }).eq('id', action.dbId);
+      if(error) throw error;
+    }catch(e){
+      showSaveErrorModal('Could not close action', 'We could not save this action close to the server: ' + (e.message||e) + '. Please try again.');
+      return;
+    }
+  }
   S.allActions=S.allActions.map(a=>a.id===id?{...a,status:'Closed',closeNote:note}:a);
   renderTab();
   showToast('Action closed ✓');
@@ -2598,22 +2837,50 @@ async function aiAction(id){
   const action=S.allActions.find(a=>a.id===id);
   if(!action)return;
   showToast('AI generating artifact...');
+  let note;
   try{
     const prompt=`You are the governance officer for ${S.profile?.nm||'the company'}. Write a 150-word governance artifact closing this action: "${action.action}". Include: what was done, key findings, next steps, sign-off. Format as a professional document. Be specific and grounded.`;
     const text=await callAPI(prompt,500);
-    const note=text.trim();
-    S.allActions=S.allActions.map(a=>a.id===id?{...a,status:'Closed',closeNote:note}:a);
-    renderTab();
-    showToast('AI artifact generated ✓');
+    note=text.trim();
   }catch(e){
+    if(e?.quotaBlocked){ showUpgradeModal(e.tier); return; }
     showToast('AI unavailable — please close manually');
+    return;
   }
+  if(S.currentUser && S.currentOrgId && action.dbId){
+    try{
+      const { error } = await sb.from('actions').update({
+        status:'completed', completed_at:new Date().toISOString(), close_note:note
+      }).eq('id', action.dbId);
+      if(error) throw error;
+    }catch(e){
+      showSaveErrorModal('Could not save closure', 'The AI artifact was generated, but we could not save the action closure to the server: ' + (e.message||e) + '. Please try closing again.');
+      return;
+    }
+  }
+  S.allActions=S.allActions.map(a=>a.id===id?{...a,status:'Closed',closeNote:note}:a);
+  renderTab();
+  showToast('AI artifact generated ✓');
 }
-function addManualAction(){
+async function addManualAction(){
   const text=prompt('Action description:');
   if(!text?.trim())return;
   const owner=prompt('Owner (role name):')||'Exco';
-  S.allActions.push({id:uid(),action:text.trim(),owner,due:'30 days',priority:'Medium',status:'Open',ref:'Manual',date:today()});
+  const localAction={id:uid(),action:text.trim(),owner,due:'30 days',priority:'Medium',status:'Open',ref:'Manual',date:today()};
+  if(S.currentUser && S.currentOrgId){
+    try{
+      const { data, error } = await sb.from('actions').insert({
+        organisation_id:S.currentOrgId, description:text.trim(), status:'open',
+        priority:'medium', owner_label:owner, created_by:S.currentUser.id
+      }).select().single();
+      if(error) throw error;
+      localAction.dbId=data.id;
+    }catch(e){
+      showSaveErrorModal('Could not save action', 'We could not save this action to the server: ' + (e.message||e) + '. Please try again.');
+      return;
+    }
+  }
+  S.allActions.push(localAction);
   renderTab();
 }
 
