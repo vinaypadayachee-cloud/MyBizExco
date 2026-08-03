@@ -29,6 +29,9 @@ input,textarea,select{font-family:inherit;font-size:14px}
 #auth{background:#f8fafc;min-height:100vh;overflow-y:auto;-webkit-overflow-scrolling:touch;display:none;padding:16px}
 #auth.active{display:block}
 #auth .auth-card{max-width:420px;margin:40px auto 0;background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:22px}
+/* INVITE */
+#invite{background:#f8fafc;min-height:100vh;overflow-y:auto;-webkit-overflow-scrolling:touch;display:none;padding:16px}
+#invite.active{display:block}
 /* SETUP */
 #setup{background:#f8fafc;height:100vh;overflow-y:auto;-webkit-overflow-scrolling:touch;display:none}
 #setup.active{display:block}
@@ -283,6 +286,14 @@ input:focus{border-color:#F59E0B!important;box-shadow:0 0 0 2px rgba(245,158,11,
   <div class="auth-card">
     <div class="w-logo" style="color:#111;text-align:center;font-size:28px">MyBiz<span>Exco</span></div>
     <div id="authBody"></div>
+  </div>
+</div>
+
+<!-- INVITE ACCEPT SCREEN -->
+<div id="invite">
+  <div class="auth-card">
+    <div class="w-logo" style="color:#111;text-align:center;font-size:28px">MyBiz<span>Exco</span></div>
+    <div id="inviteBody"></div>
   </div>
 </div>
 
@@ -1180,7 +1191,10 @@ let S = {
   govRem:[], showSupport:false,
   // auth
   authMode:'signup', authEmail:'', authPassword:'', authName:'',
-  authError:null, authBusy:false, currentUser:null, currentOrgId:null, currentRole:null
+  authError:null, authBusy:false, currentUser:null, currentOrgId:null, currentRole:null,
+  // invite accept flow
+  inviteToken:null, inviteInfo:null, inviteError:null, inviteBusy:false,
+  inviteAuthMode:'signup', inviteAuthPassword:'', inviteAuthName:''
 };
 
 // ═══════════════════════════════════════════
@@ -1221,7 +1235,7 @@ function showSaveErrorModal(title, body){
 // SCREENS
 // ═══════════════════════════════════════════
 function show(id){
-  ['welcome','auth','setup','app'].forEach(s=>{
+  ['welcome','auth','invite','setup','app'].forEach(s=>{
     const el=document.getElementById(s);
     el.classList.remove('active');
   });
@@ -1264,26 +1278,41 @@ function renderAuthBody(){
   const el=document.getElementById('authBody');
   if(el) el.innerHTML=renderAuthScreen();
 }
+async function ensureProfileExists(user){
+  const { data: existing, error: selectError } = await sb.from('profiles').select('id').eq('id', user.id).maybeSingle();
+  if(selectError) throw selectError;
+  if(existing) return;
+  const { error: insertError } = await sb.from('profiles').insert({
+    id: user.id,
+    full_name: user.user_metadata?.full_name || user.email,
+    email: user.email
+  });
+  if(insertError) throw insertError;
+}
 async function submitSignUp(){
   if(!S.authEmail||!S.authPassword||!S.authName){ S.authError='Please fill in all fields.'; renderAuthBody(); return; }
   if(S.authPassword.length<6){ S.authError='Password must be at least 6 characters.'; renderAuthBody(); return; }
   S.authBusy=true; S.authError=null; renderAuthBody();
   try{
-    const { data, error } = await sb.auth.signUp({ email: S.authEmail, password: S.authPassword });
+    const { data, error } = await sb.auth.signUp({
+      email: S.authEmail, password: S.authPassword,
+      options: { data: { full_name: S.authName } }
+    });
     if(error) throw error;
     const user = data.user;
     if(!user) throw new Error('Sign up did not return a user. If email confirmation is required, please check your inbox then sign in.');
     if(!data.session){
-      // Email confirmation required before a session exists — profile creation
-      // (which needs an authenticated session for the RLS check) must wait.
+      // Email confirmation required before a session exists. full_name is
+      // already safely persisted in user_metadata (set above), independent
+      // of confirmation status -- the profiles row itself gets created the
+      // first time a session actually exists, in submitSignIn().
       S.authBusy=false;
       S.authMode='signin';
       S.authError='Account created. Please check your email to confirm, then sign in.';
       renderAuthBody();
       return;
     }
-    const { error: profileError } = await sb.from('profiles').insert({ id: user.id, full_name: S.authName, email: S.authEmail });
-    if(profileError) throw profileError;
+    await ensureProfileExists(user);
     S.currentUser = user;
     S.authBusy=false;
     startSetup();
@@ -1299,6 +1328,7 @@ async function submitSignIn(){
   try{
     const { data, error } = await sb.auth.signInWithPassword({ email: S.authEmail, password: S.authPassword });
     if(error) throw error;
+    await ensureProfileExists(data.user);
     S.currentUser = data.user;
     await routeAfterAuth();
   } catch(e){
@@ -1355,9 +1385,19 @@ async function signOut(){
   location.reload();
 }
 async function initApp(){
+  // An invite link takes priority over the normal session-routing check --
+  // even a signed-in user landing on an invite link needs to go through
+  // acceptance (or a clear email-mismatch message), not straight into their
+  // own existing org.
+  const inviteToken = getInviteTokenFromUrl();
+  if(inviteToken){
+    await handleInviteFlow(inviteToken);
+    return;
+  }
   try{
     const { data } = await sb.auth.getSession();
     if(data && data.session && data.session.user){
+      await ensureProfileExists(data.session.user);
       S.currentUser = data.session.user;
       await routeAfterAuth();
     }
@@ -1365,6 +1405,174 @@ async function initApp(){
     // No existing session, or a transient error checking it — fall back to
     // the default static welcome screen, no error surfaced to a first-time visitor.
   }
+}
+
+// ═══════════════════════════════════════════
+// INVITE ACCEPT FLOW
+// ═══════════════════════════════════════════
+function getInviteTokenFromUrl(){
+  try{
+    return new URLSearchParams(window.location.search).get('invite') || null;
+  }catch(e){ return null; }
+}
+
+function inviteErrorMessage(code){
+  if(code==='invite_expired') return 'This invite has expired. Ask whoever invited you to send a new one.';
+  if(code==='invite_accepted') return 'This invite has already been accepted.';
+  if(code==='invite_revoked') return 'This invite has been revoked.';
+  return 'This invite link is not valid.';
+}
+
+const INVITE_ROLE_LABELS = {
+  exco_member:'Exco Member', shareholder:'Shareholder',
+  subcommittee_member:'Subcommittee Member', viewer:'Viewer'
+};
+
+async function handleInviteFlow(token){
+  S.inviteToken = token;
+  S.inviteBusy = true;
+  show('invite'); renderInviteBody();
+  try{
+    const { data, error } = await sb.rpc('get_invite_by_token', { p_token: token });
+    if(error) throw error;
+    S.inviteBusy = false;
+    if(!data?.found){
+      S.inviteError = inviteErrorMessage(data?.error);
+      renderInviteBody();
+      return;
+    }
+    S.inviteInfo = data;
+
+    // Already signed in (e.g. clicked the link in the same browser they're
+    // already using MyBizExco in) -- try to accept immediately rather than
+    // making them go through sign-in again.
+    const { data: sessionData } = await sb.auth.getSession();
+    if(sessionData?.session?.user){
+      S.currentUser = sessionData.session.user;
+      await attemptAcceptInvite();
+      return;
+    }
+    renderInviteBody();
+  }catch(e){
+    S.inviteBusy = false;
+    S.inviteError = 'Could not load this invite: ' + (e.message||e);
+    renderInviteBody();
+  }
+}
+
+function toggleInviteAuthMode(){
+  S.inviteAuthMode = S.inviteAuthMode==='signin' ? 'signup' : 'signin';
+  S.inviteError = null;
+  renderInviteBody();
+}
+
+async function submitInviteSignUp(){
+  if(!S.inviteAuthPassword || !S.inviteAuthName){ S.inviteError='Please fill in all fields.'; renderInviteBody(); return; }
+  if(S.inviteAuthPassword.length<6){ S.inviteError='Password must be at least 6 characters.'; renderInviteBody(); return; }
+  S.inviteBusy = true; S.inviteError = null; renderInviteBody();
+  try{
+    const { data, error } = await sb.auth.signUp({
+      email: S.inviteInfo.email, password: S.inviteAuthPassword,
+      options: { data: { full_name: S.inviteAuthName } }
+    });
+    if(error) throw error;
+    const user = data.user;
+    if(!user) throw new Error('Sign up did not return a user.');
+    if(!data.session){
+      // Same deferred-profile-creation reasoning as submitSignUp() -- full_name
+      // is already safely persisted in user_metadata regardless of confirmation
+      // status; the profiles row itself is created in submitInviteSignIn().
+      S.inviteBusy = false;
+      S.inviteAuthMode = 'signin';
+      S.inviteError = 'Account created. Please check your email to confirm, then come back to this invite link and sign in.';
+      renderInviteBody();
+      return;
+    }
+    await ensureProfileExists(user);
+    S.currentUser = user;
+    await attemptAcceptInvite();
+  }catch(e){
+    S.inviteBusy = false;
+    S.inviteError = e.message || String(e);
+    renderInviteBody();
+  }
+}
+
+async function submitInviteSignIn(){
+  if(!S.inviteAuthPassword){ S.inviteError='Please enter your password.'; renderInviteBody(); return; }
+  S.inviteBusy = true; S.inviteError = null; renderInviteBody();
+  try{
+    const { data, error } = await sb.auth.signInWithPassword({ email: S.inviteInfo.email, password: S.inviteAuthPassword });
+    if(error) throw error;
+    await ensureProfileExists(data.user);
+    S.currentUser = data.user;
+    await attemptAcceptInvite();
+  }catch(e){
+    S.inviteBusy = false;
+    S.inviteError = e.message || String(e);
+    renderInviteBody();
+  }
+}
+
+async function attemptAcceptInvite(){
+  S.inviteBusy = true; renderInviteBody();
+  try{
+    const { data, error } = await sb.rpc('accept_org_invite', { p_token: S.inviteToken });
+    if(error) throw error;
+    S.inviteBusy = false;
+    if(!data?.accepted){
+      if(data?.error==='email_mismatch'){
+        S.inviteError = `You're signed in as ${S.currentUser?.email}, but this invite is for ${S.inviteInfo?.email}. Sign out and sign in with the invited address to accept.`;
+      } else {
+        S.inviteError = inviteErrorMessage(data?.error);
+      }
+      renderInviteBody();
+      return;
+    }
+    // Strip ?invite=... from the URL so a refresh/back-navigation doesn't
+    // re-trigger acceptance, then route into the app normally -- hydration
+    // picks up the new membership from here, same as any other sign-in.
+    window.history.replaceState({}, '', window.location.pathname);
+    showToast('Invite accepted ✓ — welcome aboard!');
+    await routeAfterAuth();
+  }catch(e){
+    S.inviteBusy = false;
+    S.inviteError = 'Could not accept this invite: ' + (e.message||e);
+    renderInviteBody();
+  }
+}
+
+function renderInviteBody(){
+  const el = document.getElementById('inviteBody');
+  if(!el) return;
+  if(S.inviteBusy && !S.inviteInfo){
+    el.innerHTML = `<div class="step-title" style="text-align:center">Loading invite…</div>`;
+    return;
+  }
+  if(S.inviteError && !S.inviteInfo){
+    el.innerHTML = `
+      <div class="step-title" style="text-align:center">Invite unavailable</div>
+      <div class="info-box" style="background:#fef2f2;border-color:#fca5a5;margin-top:14px"><div class="info-box-icon">⚠️</div><div><div class="info-box-title" style="color:#dc2626">Error</div><div class="info-box-body">${esc(S.inviteError)}</div></div></div>
+      <button class="btn-back" style="width:100%;margin-top:14px" onclick="show('welcome')">← Back to MyBizExco</button>
+    `;
+    return;
+  }
+  if(!S.inviteInfo){
+    el.innerHTML = `<div class="step-title" style="text-align:center">Loading invite…</div>`;
+    return;
+  }
+  const isSignup = S.inviteAuthMode!=='signin';
+  const roleLabel = INVITE_ROLE_LABELS[S.inviteInfo.role] || S.inviteInfo.role;
+  el.innerHTML = `
+    <div class="step-title" style="text-align:center">You've been invited</div>
+    <div class="step-sub" style="text-align:center">Join <strong>${esc(S.inviteInfo.organisation_name)}</strong> as <strong>${esc(roleLabel)}</strong>${S.inviteInfo.title?' ('+esc(S.inviteInfo.title)+')':''}.</div>
+    ${S.inviteError?`<div class="info-box" style="background:#fef2f2;border-color:#fca5a5;margin-top:14px"><div class="info-box-icon">⚠️</div><div><div class="info-box-title" style="color:#dc2626">Error</div><div class="info-box-body">${esc(S.inviteError)}</div></div></div>`:''}
+    <div class="field" style="margin-top:16px"><label>Email</label><input value="${esc(S.inviteInfo.email)}" disabled style="background:#f1f5f9;color:#64748b"/></div>
+    <div class="field"><label>Password<span class="req">Required</span></label><input id="invite_password" type="password" value="${esc(S.inviteAuthPassword)}" oninput="S.inviteAuthPassword=this.value" placeholder="At least 6 characters"/></div>
+    ${isSignup?`<div class="field"><label>Your name<span class="req">Required</span></label><input id="invite_name" value="${esc(S.inviteAuthName)}" oninput="S.inviteAuthName=this.value" placeholder="e.g. Vinay Padayachee"/></div>`:''}
+    <button class="btn-next" style="width:100%" ${S.inviteBusy?'disabled':''} onclick="${isSignup?'submitInviteSignUp()':'submitInviteSignIn()'}">${S.inviteBusy?'Please wait…':(isSignup?'Create account & accept →':'Sign in & accept →')}</button>
+    <button class="btn-back" style="width:100%;margin-top:8px" onclick="toggleInviteAuthMode()">${isSignup?'Already have an account? Sign in':"Don't have an account? Create one"}</button>
+  `;
 }
 
 // ═══════════════════════════════════════════
