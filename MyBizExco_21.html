@@ -2952,6 +2952,7 @@ _MyBizExco_`;
       <button onclick="document.getElementById('waMsg').value=${JSON.stringify(msgSummary)}" style="padding:8px;background:#f1f5f9;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">Minutes</button>
       <button onclick="document.getElementById('waMsg').value=${JSON.stringify(msgActions)}" style="padding:8px;background:#f1f5f9;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">Actions</button>
     </div>
+    <div class="hint" style="margin-top:8px">💡 WhatsApp doesn't let apps post into a group directly. Tapping Send copies this message and opens WhatsApp with a number pre-loaded — you'll need to paste it into your actual group chat yourself.</div>
     ${S.waGroups.filter(g=>g.active).map(g=>`
       <button onclick="sendWA(${JSON.stringify(g.numbers||'').replace(/"/g,'&quot;')})" style="width:100%;padding:10px;background:#25D366;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;margin-top:8px;cursor:pointer">💬 Send to ${esc(g.name)}</button>`).join('')}
   `);
@@ -3186,6 +3187,7 @@ function composeWA(id){
   openModal(`
     <div class="modal-header"><div class="modal-title">${g.icon||'💬'} ${esc(g.name)}</div><button class="modal-close" onclick="closeModal()">✕</button></div>
     <textarea id="waMsgMore" rows="6" style="width:100%;padding:10px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none" placeholder="Type your message..."></textarea>
+    <div class="hint" style="margin-top:8px">💡 WhatsApp doesn't let apps post into a group directly. Tapping Send copies this message and opens WhatsApp with a number pre-loaded — you'll need to paste it into your actual group chat yourself.</div>
     <button onclick="sendWA(${JSON.stringify(g.numbers||'').replace(/"/g,'&quot;')})" style="width:100%;padding:12px;background:#25D366;color:#fff;border:none;border-radius:10px;font-weight:700;margin-top:10px;cursor:pointer">💬 Send to ${esc(g.name)}</button>`);
 }
 function openConflictReg(){
