@@ -1268,7 +1268,7 @@ function renderAuthScreen(){
     ${S.authError?`<div class="info-box" style="background:#fef2f2;border-color:#fca5a5;margin-top:14px"><div class="info-box-icon">⚠️</div><div><div class="info-box-title" style="color:#dc2626">Error</div><div class="info-box-body">${esc(S.authError)}</div></div></div>`:''}
     <div class="field" style="margin-top:16px"><label>Email<span class="req">Required</span></label><input id="auth_email" type="email" value="${esc(S.authEmail)}" oninput="S.authEmail=this.value" placeholder="you@company.co.za"/></div>
     <div class="field"><label>Password<span class="req">Required</span></label><input id="auth_password" type="password" value="${esc(S.authPassword)}" oninput="S.authPassword=this.value" placeholder="At least 6 characters"/></div>
-    ${isSignup?`<div class="field"><label>Your name<span class="req">Required</span></label><input id="auth_name" value="${esc(S.authName)}" oninput="S.authName=this.value" placeholder="e.g. Vinay Padayachee"/></div>`:''}
+    ${isSignup?`<div class="field"><label>Your name<span class="req">Required</span></label><input id="auth_name" value="${esc(S.authName)}" oninput="S.authName=this.value" placeholder="e.g. John Jones"/></div>`:''}
     <button class="btn-next" style="width:100%" ${S.authBusy?'disabled':''} onclick="${isSignup?'submitSignUp()':'submitSignIn()'}">${S.authBusy?'Please wait…':(isSignup?'Create account →':'Sign in →')}</button>
     <button class="btn-back" style="width:100%;margin-top:8px" onclick="toggleAuthMode()">${isSignup?'Already have an account? Sign in':"Don't have an account? Create one"}</button>
     <button class="btn-back" style="width:100%;margin-top:8px;border:none" onclick="show('welcome')">← Back</button>
@@ -1569,7 +1569,7 @@ function renderInviteBody(){
     ${S.inviteError?`<div class="info-box" style="background:#fef2f2;border-color:#fca5a5;margin-top:14px"><div class="info-box-icon">⚠️</div><div><div class="info-box-title" style="color:#dc2626">Error</div><div class="info-box-body">${esc(S.inviteError)}</div></div></div>`:''}
     <div class="field" style="margin-top:16px"><label>Email</label><input value="${esc(S.inviteInfo.email)}" disabled style="background:#f1f5f9;color:#64748b"/></div>
     <div class="field"><label>Password<span class="req">Required</span></label><input id="invite_password" type="password" value="${esc(S.inviteAuthPassword)}" oninput="S.inviteAuthPassword=this.value" placeholder="At least 6 characters"/></div>
-    ${isSignup?`<div class="field"><label>Your name<span class="req">Required</span></label><input id="invite_name" value="${esc(S.inviteAuthName)}" oninput="S.inviteAuthName=this.value" placeholder="e.g. Vinay Padayachee"/></div>`:''}
+    ${isSignup?`<div class="field"><label>Your name<span class="req">Required</span></label><input id="invite_name" value="${esc(S.inviteAuthName)}" oninput="S.inviteAuthName=this.value" placeholder="e.g. John Jones"/></div>`:''}
     <button class="btn-next" style="width:100%" ${S.inviteBusy?'disabled':''} onclick="${isSignup?'submitInviteSignUp()':'submitInviteSignIn()'}">${S.inviteBusy?'Please wait…':(isSignup?'Create account & accept →':'Sign in & accept →')}</button>
     <button class="btn-back" style="width:100%;margin-top:8px" onclick="toggleInviteAuthMode()">${isSignup?'Already have an account? Sign in':"Don't have an account? Create one"}</button>
   `;
@@ -1676,8 +1676,8 @@ function renderStep1(){
     <div class="step-sub">This powers your AI board deliberations and every document.</div>
     <div class="info-box"><div class="info-box-icon">🏭</div><div><div class="info-box-title">Choose your industry sector first</div><div class="info-box-body">We auto-load the correct SA regulators and legal frameworks. This shapes every AI deliberation.</div></div></div>
     <div class="sector-grid">${sectors}</div>
-    <div class="field"><label>Company name<span class="req">Required</span></label><input id="f_nm" value="${esc(S.nm)}" placeholder="e.g. Stage IS Insurance Solutions (Pty) Ltd" oninput="S.nm=this.value;updateNextBtn()"/><div class="hint">💡 Use your full registered company name as on your CIPC certificate.</div></div>
-    <div class="field"><label>Your name (CEO / Owner)<span class="req">Required</span></label><input id="f_ceo" value="${esc(S.ceoName)}" placeholder="e.g. Vinay Padayachee" oninput="S.ceoName=this.value"/></div>
+    <div class="field"><label>Company name<span class="req">Required</span></label><input id="f_nm" value="${esc(S.nm)}" placeholder="e.g. Johns Electrical" oninput="S.nm=this.value;updateNextBtn()"/><div class="hint">💡 Use your full registered company name as on your CIPC certificate.</div></div>
+    <div class="field"><label>Your name (CEO / Owner)<span class="req">Required</span></label><input id="f_ceo" value="${esc(S.ceoName)}" placeholder="e.g. John Jones" oninput="S.ceoName=this.value"/></div>
     <div class="field-row">
       <div class="field"><label>CIPC Reg. Number</label><input value="${esc(S.regNo)}" placeholder="2019/123456/07" oninput="S.regNo=this.value"/><div class="hint">💡 On your CoR14.3 certificate.</div></div>
       <div class="field"><label>Registration date</label><input type="date" value="${S.incDate}" oninput="S.incDate=this.value"/><div class="hint">💡 Used for AGM & board deadlines.</div></div>
