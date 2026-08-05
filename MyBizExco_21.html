@@ -17,6 +17,7 @@ input,textarea,select{font-family:inherit;font-size:14px}
 #welcome.active{display:flex}
 .w-logo{font-size:52px;font-weight:900;color:#fff;letter-spacing:-2px;margin-bottom:8px}
 .w-logo span{color:#F59E0B}
+.w-tagline{font-size:18px;font-weight:600;color:#93c5fd;margin-bottom:14px}
 .w-sub{font-size:16px;color:rgba(255,255,255,0.6);margin-bottom:32px;line-height:1.6;max-width:380px}
 .w-cards{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:32px;width:100%;max-width:420px}
 .w-card{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:14px 10px}
@@ -269,6 +270,7 @@ input:focus{border-color:#F59E0B!important;box-shadow:0 0 0 2px rgba(245,158,11,
 <div id="welcome" class="active">
   <div class="top-tabs-wrap" id="welcomeTopTabs" style="width:100%;margin-bottom:18px"></div>
   <div class="w-logo">MyBiz<span>Exco</span></div>
+  <div class="w-tagline">Intelligence that protects. Insight that grows.</div>
   <div class="w-sub">Congratulations on choosing South Africa's most powerful AI governance tool. You're about to run your business like the best in the world.</div>
   <div class="w-cards">
     <div class="w-card"><div class="w-card-icon">🤖</div><div class="w-card-title">AI Board</div><div class="w-card-body">6 exec voices deliberate every decision</div></div>
@@ -1625,7 +1627,7 @@ const FAQS=[
 function renderStepAbout(){
   return`
     <div class="step-title">${COUNTRY.flag} About MyBizExco</div>
-    <div class="step-sub">Everything you need to know before you begin.</div>
+    <div class="step-sub">Intelligence that protects. Insight that grows.</div>
     <div class="info-box"><div class="info-box-icon">🤖</div><div><div class="info-box-title">What it does</div><div class="info-box-body">MyBizExco gives every South African SMME an AI-powered Exco: Deputy CEO, CFO, COO, CRO, CHRO & CTO voices that deliberate your real decisions, produce boardroom-ready minutes, track actions, and keep a defensible governance audit trail — at a fraction of the cost of a traditional advisory retainer, with no equity given up.</div></div></div>
     <div class="info-box"><div class="info-box-icon">🧭</div><div><div class="info-box-title">How to use it</div><div class="info-box-body">Complete the tabs above in order — Business, Compliance, Leadership, Decision Rules, Communication, Meeting Types — then press Launch. Afterwards, jump straight to any tab, any time, from any page using the bar at the top.</div></div></div>
     <div class="card" style="margin-bottom:16px">
