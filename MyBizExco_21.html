@@ -2625,7 +2625,7 @@ async function deliberate(id){
     renderTab();
     if(S.voiceOn&&results.length>0){
       const last=results[results.length-1];
-      speak((last.dn||last.role)+' says: '+last.analysis);
+      speak((last.dn||last.role)+' says: '+last.analysis, last.role);
     }
     if(canLog){
       // Fire-and-forget: logged in the background so the deliberation pace
@@ -3283,11 +3283,28 @@ function buildSupportEmail(){
 // VOICE
 // ═══════════════════════════════════════════
 function toggleVoice(){S.voiceOn=!S.voiceOn;updateTopbar();showToast(S.voiceOn?'Voice on 🔊':'Voice off 🔇');}
-function speak(text){
+const ROLE_VOICE={
+  dceo:{name:'David', pitch:1.00,rate:0.95},
+  cfo: {name:'Susan', pitch:0.85,rate:0.90},
+  coo: {name:'Mark',  pitch:0.95,rate:1.00},
+  cro: {name:'Hazel', pitch:1.15,rate:0.88},
+  chro:{name:'Zira',  pitch:1.15,rate:0.93},
+  cto: {name:'George',pitch:0.90,rate:1.05}
+};
+function pickVoice(role){
+  const cfg=ROLE_VOICE[role];
+  if(!cfg||!window.speechSynthesis)return null;
+  return window.speechSynthesis.getVoices().find(v=>v.name.includes(cfg.name))||null;
+}
+function speak(text,role){
   if(!S.voiceOn||!window.speechSynthesis)return;
   window.speechSynthesis.cancel();
   const u=new SpeechSynthesisUtterance(text);
-  u.lang='en-ZA';u.rate=0.9;window.speechSynthesis.speak(u);
+  const cfg=ROLE_VOICE[role];
+  const voice=pickVoice(role);
+  u.pitch=cfg?cfg.pitch:1.0;u.rate=cfg?cfg.rate:0.9;
+  if(voice){u.voice=voice;u.lang=voice.lang;}
+  window.speechSynthesis.speak(u);
 }
 
 // ═══════════════════════════════════════════
