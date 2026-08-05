@@ -1616,7 +1616,7 @@ function renderStep(){
 
 // ═══ STEP 1: ABOUT MYBIZEXCO ═══
 const FAQS=[
-  {q:'What is MyBizExco?',a:'MyBizExco is an AI-powered governance operating system built for South African SMMEs. It gives your business an instant "AI Exco" — a CFO, COO, CRO, CHRO and CTO voice — that deliberates real decisions, produces boardroom-ready minutes, and keeps your governance audit trail.'},
+  {q:'What is MyBizExco?',a:'MyBizExco is an AI-powered governance operating system built for South African SMMEs. It gives your business an instant "AI Exco" — a Deputy CEO, CFO, COO, CRO, CHRO and CTO voice — that deliberates real decisions, produces boardroom-ready minutes, and keeps your governance audit trail.'},
   {q:'What does it do?',a:'It runs your Board, Exco, Subcommittee, Management, Shareholder and Coffee Exco meetings end-to-end: builds the agenda, deliberates each item through your AI leadership team, records the resolution, drafts the minutes, tracks the resulting actions, and distributes everything by email or WhatsApp.'},
   {q:'How do I use it?',a:'Work through the tabs above in order — About Your Business, Compliance & Legal, Leadership Team, Decision Needed, Communication, Meeting Types — then press Launch MyBizExco. After that you can jump straight back to any tab at any time, from anywhere in the app.'},
   {q:'Is my data stored anywhere?',a:'Everything currently lives in this browser session. Use the 💾 Save button (top right, or More tab) regularly to export your governance file, and 📂 Restore to reload it next time.'},
@@ -1626,7 +1626,7 @@ function renderStepAbout(){
   return`
     <div class="step-title">${COUNTRY.flag} About MyBizExco</div>
     <div class="step-sub">Everything you need to know before you begin.</div>
-    <div class="info-box"><div class="info-box-icon">🤖</div><div><div class="info-box-title">What it does</div><div class="info-box-body">MyBizExco gives every South African SMME an AI-powered Exco: CFO, COO, CRO, CHRO & CTO voices that deliberate your real decisions, produce boardroom-ready minutes, track actions, and keep a defensible governance audit trail — at a fraction of the cost of a traditional advisory retainer, with no equity given up.</div></div></div>
+    <div class="info-box"><div class="info-box-icon">🤖</div><div><div class="info-box-title">What it does</div><div class="info-box-body">MyBizExco gives every South African SMME an AI-powered Exco: Deputy CEO, CFO, COO, CRO, CHRO & CTO voices that deliberate your real decisions, produce boardroom-ready minutes, track actions, and keep a defensible governance audit trail — at a fraction of the cost of a traditional advisory retainer, with no equity given up.</div></div></div>
     <div class="info-box"><div class="info-box-icon">🧭</div><div><div class="info-box-title">How to use it</div><div class="info-box-body">Complete the tabs above in order — Business, Compliance, Leadership, Decision Rules, Communication, Meeting Types — then press Launch. Afterwards, jump straight to any tab, any time, from any page using the bar at the top.</div></div></div>
     <div class="card" style="margin-bottom:16px">
       <div class="card-title">Why MyBizExco Exists</div>
@@ -1844,7 +1844,7 @@ function renderStep3(){
   return`
     <div class="step-title">Your leadership team</div>
     <div class="step-sub">Add names for each Exco role. Vacant roles still get an AI voice.</div>
-    <div class="info-box"><div class="info-box-icon">👥</div><div><div class="info-box-title">What is an Exco?</div><div class="info-box-body">The Executive Committee is your leadership team. MyBizExco creates an AI version of each role — so when you deliberate a decision, you hear from your CFO, COO, CRO, CHRO, and CTO with genuine analysis from their area.</div></div></div>
+    <div class="info-box"><div class="info-box-icon">👥</div><div><div class="info-box-title">What is an Exco?</div><div class="info-box-body">The Executive Committee is your leadership team. MyBizExco creates an AI version of each role — so when you deliberate a decision, you hear from your Deputy CEO, CFO, COO, CRO, CHRO, and CTO with genuine analysis from their area.</div></div></div>
     ${excoHtml}
     ${logHtml?`<div class="card" style="margin-top:14px"><div class="card-title">Leadership changes log</div>${logHtml}</div>`:''}
     <div class="nav-btns">
