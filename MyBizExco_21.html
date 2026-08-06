@@ -1603,6 +1603,18 @@ function setStep(n){
   body.scrollTop=0;
 }
 
+function renderNavFooter(back, next, wrapClass){
+  wrapClass = wrapClass || 'nav-btns';
+  const backHtml = back
+    ? `<button class="btn-back" onclick="${back.disabled?'':back.onClick}" ${back.disabled?'disabled':''}>${back.label}</button>`
+    : '';
+  const nextId = next.id ? ` id="${next.id}"` : '';
+  return `<div class="${wrapClass}">
+    ${backHtml}
+    <button class="${next.cls||'btn-next'}"${nextId} onclick="${next.disabled?'':next.onClick}" ${next.disabled?'disabled':''}>${next.label}</button>
+  </div>`;
+}
+
 function renderStep(){
   const body=document.getElementById('setupBody');
   S.topActiveKey=STEP_KEY_OF[S.step-1]||'about';
@@ -1655,7 +1667,7 @@ function renderStepAbout(){
       ${FAQS.map(f=>`<div class="faq-item"><div class="faq-q">${esc(f.q)}</div><div class="faq-a">${f.raw?f.a:esc(f.a)}</div></div>`).join('')}
     </div>
     <div class="info-box"><div class="info-box-icon">📞</div><div><div class="info-box-title">Need help?</div><div class="info-box-body">Tap "Contact Us" at the top of any page, any time.</div></div></div>
-    <div class="nav-btns"><button class="btn-next" onclick="nextStep()">Continue →</button></div>`;
+    ${renderNavFooter(null,{label:'Continue →',onClick:'nextStep()'})}`;
 }
 
 function renderStep1(){
@@ -1702,10 +1714,7 @@ function renderStep1(){
       <input type="file" id="bizDocInput" multiple style="display:none" onchange="uploadBizDocs(event)"/>
       ${docHtml}
     </div>
-    <div class="nav-btns">
-      <button class="btn-back" onclick="setStep(1)">← Back</button>
-      <button class="btn-next" id="nextBtn" onclick="nextStep()" ${!S.nm?'disabled':''}>Continue →</button>
-    </div>`;
+    ${renderNavFooter({label:'← Back',onClick:'setStep(1)'},{label:'Continue →',onClick:'nextStep()',disabled:!S.nm,id:'nextBtn'})}`;
 }
 
 // ═══ STEP 3: COMPLIANCE, REGULATORY & LEGAL ═══
@@ -1726,10 +1735,7 @@ function renderStepCompliance(){
     <div class="card" style="margin-bottom:12px"><div style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em">${esc(INDS[S.ind]?.reg||'Regulator')}</div>${fwHtml}</div>
     <div class="hint" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;margin-bottom:16px">⚠️ <b>Not legal advice.</b> These AI summaries are general guidance to help you have the right conversation — always confirm specific obligations with your accountant, company secretary or legal advisor before relying on them.</div>
     <div class="field"><label>Additional framework (optional)</label><input value="${esc(S.ar)}" placeholder="e.g. King IV, GDPR, Basel III" oninput="S.ar=this.value"/></div>
-    <div class="nav-btns">
-      <button class="btn-back" onclick="setStep(2)">← Back</button>
-      <button class="btn-next" onclick="nextStep()">Continue →</button>
-    </div>`;
+    ${renderNavFooter({label:'← Back',onClick:'setStep(2)'},{label:'Continue →',onClick:'nextStep()'})}`;
 }
 async function explainFramework(f,btn){
   const el=document.getElementById('fwSum_'+Array.from(btn.closest('.card').querySelectorAll('button')).indexOf(btn));
@@ -1821,10 +1827,7 @@ function renderStepCommunication(){
     ${commsItemsHtml}
     <div class="upload-zone" onclick="document.getElementById('commsDocInput').click()">📁 Tap to upload a document to send<div class="hint">Any file type — see size guide above</div></div>
     <input type="file" id="commsDocInput" style="display:none" onchange="uploadCommsDoc(event)"/>
-    <div class="nav-btns">
-      <button class="btn-back" onclick="setStep(5)">← Back</button>
-      <button class="btn-next" onclick="nextStep()">Continue →</button>
-    </div>`;
+    ${renderNavFooter({label:'← Back',onClick:'setStep(5)'},{label:'Continue →',onClick:'nextStep()'})}`;
 }
 
 function renderStep3(){
@@ -1848,10 +1851,7 @@ function renderStep3(){
     <div class="info-box"><div class="info-box-icon">👥</div><div><div class="info-box-title">What is an Exco?</div><div class="info-box-body">The Executive Committee is your leadership team. MyBizExco creates an AI version of each role — so when you deliberate a decision, you hear from your Deputy CEO, CFO, COO, CRO, CHRO, and CTO with genuine analysis from their area.</div></div></div>
     ${excoHtml}
     ${logHtml?`<div class="card" style="margin-top:14px"><div class="card-title">Leadership changes log</div>${logHtml}</div>`:''}
-    <div class="nav-btns">
-      <button class="btn-back" onclick="setStep(3)">← Back</button>
-      <button class="btn-next" onclick="nextStep()">Continue →</button>
-    </div>`;
+    ${renderNavFooter({label:'← Back',onClick:'setStep(3)'},{label:'Continue →',onClick:'nextStep()'})}`;
 }
 function removeExcoMember(i){
   const e=S.exco[i];
@@ -1885,10 +1885,7 @@ function renderStep4(){
       <div class="active-rules-title">Active rules</div>
       ${activeRules||'<div style="font-size:13px;color:#dc2626">⚠️ No rules active — all resolutions will pass automatically</div>'}
     </div>
-    <div class="nav-btns">
-      <button class="btn-back" onclick="setStep(4)">← Back</button>
-      <button class="btn-next" onclick="nextStep()">Continue →</button>
-    </div>`;
+    ${renderNavFooter({label:'← Back',onClick:'setStep(4)'},{label:'Continue →',onClick:'nextStep()'})}`;
 }
 
 // ═══ STEP 7: MEETING TYPES ═══
@@ -1914,10 +1911,7 @@ function renderStepMeetingTypes(){
     <div class="step-sub">Set your most-used meeting type as the default — you can pick a different type each time you start a meeting.</div>
     <div class="info-box"><div class="info-box-icon">📅</div><div><div class="info-box-title">Six meeting types, one governance trail</div><div class="info-box-body">Shareholder, Board, Board Subcommittee (name it yourself — e.g. ALCO, or Social &amp; Ethics), Exco, Management and Coffee Exco are all supported. Special Board Meetings remain available inside the Meetings tab for ad-hoc use.</div></div></div>
     ${rows}
-    <div class="nav-btns">
-      <button class="btn-back" onclick="setStep(6)">← Back</button>
-      <button class="btn-launch" onclick="launchApp()">🚀 Launch MyBizExco</button>
-    </div>`;
+    ${renderNavFooter({label:'← Back',onClick:'setStep(6)'},{label:'🚀 Launch MyBizExco',onClick:'launchApp()',cls:'btn-launch'})}`;
 }
 function selectDefaultMeetingType(k){S.defaultMeetingType=k;S.meetingType=k==='subcom'?'subcom':k;renderStep();}
 
@@ -2163,10 +2157,11 @@ const APP_TAB_LABEL={home:'Home',board:'Meetings',log:'Minutes',actions:'Actions
 function renderAppNavBtns(){
   const idx=APP_TAB_ORDER.indexOf(S.tab);
   const prev=APP_TAB_ORDER[idx-1], next=APP_TAB_ORDER[idx+1];
-  return `<div class="app-nav-btns">
-    <button class="btn-back" onclick="${prev?`switchTab('${prev}')`:''}" ${!prev?'disabled':''}>← ${prev?APP_TAB_LABEL[prev]:'Back'}</button>
-    <button class="btn-next" onclick="${next?`switchTab('${next}')`:''}" ${!next?'disabled':''}>${next?APP_TAB_LABEL[next]:'Continue'} →</button>
-  </div>`;
+  return renderNavFooter(
+    {label:'← '+(prev?APP_TAB_LABEL[prev]:'Back'),onClick:prev?`switchTab('${prev}')`:'',disabled:!prev},
+    {label:(next?APP_TAB_LABEL[next]:'Continue')+' →',onClick:next?`switchTab('${next}')`:'',disabled:!next},
+    'app-nav-btns'
+  );
 }
 
 // Editable setup-style pages, reachable from anywhere via the top tab bar, once launched
@@ -2183,10 +2178,10 @@ function renderAppConfig(){
   const idx=CONFIG_KEYS.indexOf(key);
   const prevKey=CONFIG_KEYS[idx-1], nextKey=CONFIG_KEYS[idx+1];
   const labelOf=k=>TOP_TABS.find(t=>t.k===k)?.label||k;
-  return html+`<div class="nav-btns">
-    <button class="btn-back" onclick="${prevKey?`goToSection('${prevKey}')`:`switchTab('home')`}">← ${prevKey?labelOf(prevKey):'Back to app'}</button>
-    <button class="btn-next" onclick="${nextKey?`goToSection('${nextKey}')`:`switchTab('home')`}">${nextKey?labelOf(nextKey):'Done — back to app'} →</button>
-  </div>`;
+  return html+renderNavFooter(
+    {label:'← '+(prevKey?labelOf(prevKey):'Back to app'),onClick:prevKey?`goToSection('${prevKey}')`:`switchTab('home')`},
+    {label:(nextKey?labelOf(nextKey):'Done — back to app')+' →',onClick:nextKey?`goToSection('${nextKey}')`:`switchTab('home')`}
+  );
 }
 
 function renderScoreBreakdown(){
