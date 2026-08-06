@@ -182,6 +182,96 @@ once read.
     originally run for the *previous* commit (`905e90e`) and was
     re-verified fresh here rather than assumed still true.
 
+### 2026-08-06
+- **Added a fresh UX/navigation review batch to `SNAGS.md`** (`5c3649d`,
+  committed and pushed): meeting agenda page navigation, the Tools/More
+  "Continue" dead-end, the "Use template" flow, an app-wide navigation
+  labeling standard, input-field visual affordance, plus several
+  smaller self-contained fixes (landing-screen flash, "Welcome" tab,
+  score circle color, score breakdown copy). See `SNAGS.md` for the
+  full list — two of these items (navigation labeling, input-field
+  affordance) were picked up and closed the same day, below.
+- **Navigation labeling standard + input-field visual affordance**
+  — two distinct `SNAGS.md` items, worked together (shared a read-only
+  audit pass) but landed as two separate commits per standing policy:
+  - `ca744ed` — "Unify page navigation under a shared
+    `renderNavFooter()` helper" (28 insertions/33 deletions, committed
+    and pushed, confirmed live in production). Replaced three
+    independent nav-generation mechanisms (bespoke per-wizard-step
+    markup, the array-driven `renderAppNavBtns()`, and
+    `renderAppConfig()`'s inline block) with one shared
+    `renderNavFooter(back, next, wrapClass)` function — all 7 wizard
+    steps, the 5 main-app tabs, and the 5 config pages now render
+    through the same code path. A full read-only audit (via a
+    background research agent) preceded any code: every page/screen
+    with back/continue nav was mapped, along with every shared helper
+    function (`show`, `setStep`, `nextStep`, `switchTab`,
+    `goToSection`) already in the file. Two real edge cases surfaced
+    only while drafting the actual diffs (not caught in the design
+    phase) and were preserved via optional params rather than dropped:
+    `renderAppNavBtns()`'s wrapper div uses a different CSS class
+    (`app-nav-btns` vs `nav-btns`, different margin/padding) than every
+    other nav block; step 2's Continue button carries `id="nextBtn"`,
+    which `updateNextBtn()` live-toggles on every keystroke in the
+    company-name field. Scope deliberately excluded (flagged, not
+    silently dropped): auth/invite screens (different semantics —
+    mode-toggle/form-submit, not step-navigation), the meeting session
+    screen (has no nav at all today — that's a separate open
+    `SNAGS.md` question about Cancel semantics), and the template
+    modal.
+  - `bdca24c` — "Add shared light-blue highlight for empty input
+    fields" (19 insertions/1 deletion, committed and pushed, confirmed
+    live in production). Empty `.field` inputs/textareas/selects get a
+    light-blue border+background (`#bfdbfe`/`#eff6ff`, matching the
+    existing `.info-box` blue — chosen over the landing-page tagline's
+    `#93c5fd` since the landing page turned out to have no actual
+    pre-existing "accent block" blue, only that one text color) via a
+    shared `refreshFieldEmptyStates()` helper, wired into every render
+    path that produces `.field` markup: the wizard (`renderStep()`),
+    config pages (`renderTab()`), auth (`renderAuthBody()`), invite
+    (`renderInviteBody()`), and modals generically (`openModal()`, so
+    future modals get it for free — found and fixed two modals that
+    would otherwise have been missed, `editDL()`/`editCustomDL()`).
+    `:not(:focus)` keeps the new blue mutually exclusive with the
+    existing amber `:focus` border by construction. Also removed a
+    bespoke inline "has content" indicator on the meeting-focus
+    textarea (`renderBoard()`) that would have silently fought the new
+    shared mechanism — inline styles beat class selectors on
+    specificity, so the old indicator would have won on `border-color`
+    while the new rule won on `background`, producing a broken
+    half-applied look.
+  - Went with Option B (JS-driven `.value` check) over Option A
+    (CSS-only `:placeholder-shown`) specifically so `<select>` elements
+    are covered by the same mechanism as `<input>`/`<textarea>` — even
+    though, once checked, the app's only 2 `<select>` elements
+    (business size, province) never actually go empty in practice
+    (both default to a real value, `sme`/`Gauteng`), so the highlight
+    is currently input/textarea-only in visible effect. Not a mechanism
+    gap, just current data behavior — visually confirmed via screenshot
+    (5 empty text fields highlighted; the 2 selects, both carrying
+    their real defaults, correctly showed no highlight).
+  - QA passed: Puppeteer-core against real Edge, zero console/page
+    errors, covering both commits together — all 7 wizard steps'
+    nav-footer output, the step-2 `nextBtn`/field-empty interaction
+    (typed into the company-name field, confirmed both the disabled
+    state and the blue highlight cleared together), all 5 main-app
+    tabs' back/next labels (including Home's disabled-but-present back
+    button and More's known disabled Continue dead-end — both
+    unchanged, confirmed not regressed), a config page, and a modal.
+    Screenshot taken of wizard step 2 to visually confirm the blue
+    highlight.
+  - Split into two commits from one applied batch of 18 diff hunks
+    using `git apply --cached` against a hand-built nav-footer-only
+    patch (staging the index only, never touching the already-QA'd
+    working tree), verified via hunk-count and content greps before
+    each commit — chosen over a `git stash`-based split specifically to
+    avoid any risk of merge-conflict markers landing in the real file.
+  - Verified live: fetched `https://mybizexco-vanilla.vercel.app/`
+    directly post-push, `Last-Modified` matched the fetch moment
+    exactly. Confirmed present: `renderNavFooter()`,
+    `refreshFieldEmptyStates()`, the `.field-empty` CSS rule, and the
+    absence of the old bespoke inline meeting-context indicator.
+
 ## Next up
 
 - **Send-invite UI** (More tab) — not yet built. Must restrict role

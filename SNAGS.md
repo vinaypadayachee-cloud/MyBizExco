@@ -45,18 +45,6 @@ add/improve in-context copy on the send screens themselves. Revisit if so.
   auto-continue on selection (with Back only), or select-then-confirm
   (Continue + Back)? Decide the pattern before implementation.
 
-#### App-wide consistency passes (bigger than single-page fixes)
-- **Navigation labeling standard** — back/continue buttons should be labeled
-  with their actual destination/outcome (e.g. "← Leadership Team",
-  "Done — back to app →" as already done on the Decision Rules page),
-  not generic "Back"/"Continue". Apply to every page except initial
-  landing/sign-in. Sign-in edge case: if session is already active, don't
-  silently skip past landing — show "Continue" or "You're already signed in."
-- **Input-field visual affordance** — any field awaiting user input (text,
-  values) should get a light-blue highlight, consistent with landing-page
-  accent blocks, so it's immediately recognizable as actionable. Likely a
-  shared CSS class/component, not a per-page fix.
-
 #### Smaller, self-contained fixes
 - **Landing screen flash for signed-in users** — landing page briefly renders
   before redirecting signed-in users to dashboard. Confirm whether
@@ -73,6 +61,79 @@ add/improve in-context copy on the send screens themselves. Revisit if so.
   +25/25) are determined — tied to configured meeting cadence, or fixed?
 
 ## Resolved snags
+
+### Navigation labeling standard — RESOLVED 2026-08-06
+**Was:** app-wide consistency pass. **Type:** UX / navigation.
+
+Original ask: back/continue buttons should be labeled with their actual
+destination/outcome (e.g. "← Leadership Team", "Done — back to app →"),
+not generic "Back"/"Continue", applied everywhere except initial
+landing/sign-in.
+
+Resolved in `ca744ed` ("Unify page navigation under a shared
+`renderNavFooter()` helper"): replaced three independent nav-generation
+mechanisms (bespoke per-wizard-step markup, the array-driven
+`renderAppNavBtns()`, and `renderAppConfig()`'s inline block) with one
+shared `renderNavFooter(back, next, wrapClass)` function. All 7 wizard
+steps, the 5 main-app tabs, and the 5 config pages now render their
+back/continue buttons through the same code path, each still passing
+its own destination-aware label (e.g. "← About MyBizExco", "Compliance
+& Legal →", "🚀 Launch MyBizExco", "Done — back to app →") rather than
+a generic one.
+
+Scope deliberately excluded, not overlooked: auth/invite screens
+(different semantics — mode-toggle/form-submit, not step-navigation,
+so the sign-in edge case from the original ask doesn't apply the same
+way there), the meeting session screen (has no nav at all — separate
+open item above, "Meeting agenda page navigation," blocked on the
+Cancel-semantics decision), and the template modal.
+
+QA: Puppeteer-core against real Edge, zero console/page errors, all 7
+wizard steps' and all 5 tabs' back/next labels verified against
+expected values (including two pre-existing edge cases confirmed
+unchanged: Home tab's back button still renders disabled-but-present
+rather than omitted, and More tab's Continue still shows its known
+disabled dead-end — that dead-end itself is untouched, tracked
+separately as "Tools/More page Continue button" above). Confirmed live
+in production post-push.
+
+### Input-field visual affordance — RESOLVED 2026-08-06
+**Was:** app-wide consistency pass. **Type:** UX / clarity.
+
+Original ask: any field awaiting user input should get a light-blue
+highlight, consistent with landing-page accent blocks, as a shared
+CSS class/component rather than a per-page fix.
+
+Resolved in `bdca24c` ("Add shared light-blue highlight for empty
+input fields"): empty `.field` inputs/textareas/selects get a
+light-blue border+background (`#bfdbfe`/`#eff6ff`) via a shared
+`refreshFieldEmptyStates()` helper, wired into every render path that
+produces `.field` markup — the wizard, config pages, auth, invite, and
+modals generically (via `openModal()`, so future modals inherit it
+automatically). `:not(:focus)` keeps the new blue mutually exclusive
+with the pre-existing amber `:focus` border by construction, so the
+two never compete.
+
+Two things worth noting for future reference:
+- The color came from `.info-box`'s existing blue, not the landing
+  page — checked, and the landing page (`#welcome`/`.w-*`) turned out
+  to have no actual "accent block" blue color at all, only the
+  `.w-tagline` text color (`#93c5fd`). `.info-box`'s blue was judged
+  the closer match to "consistent with existing accents."
+- The app's only 2 `<select>` elements (business size, province)
+  always default to a real value and so never actually go empty in
+  practice — the highlight is currently input/textarea-only in visible
+  effect, not a gap in the mechanism itself (it's written generically
+  to cover `<select>` too).
+- Removed a bespoke inline "has content" indicator on the
+  meeting-focus textarea (`renderBoard()`) that would otherwise have
+  silently fought the new shared mechanism (inline styles beat class
+  selectors on specificity).
+
+QA: Puppeteer-core against real Edge, zero console/page errors,
+screenshot taken of wizard step 2 to visually confirm the highlight
+(5 empty text fields highlighted, the 2 selects correctly not).
+Confirmed live in production post-push.
 
 ### "About MyBizExco" copy is dense paragraphs, not scannable — RESOLVED 2026-08-05/06
 **Was:** Low / not urgent. **Type:** UX / clarity.
