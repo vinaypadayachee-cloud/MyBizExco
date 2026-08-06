@@ -30,32 +30,37 @@ add/improve in-context copy on the send screens themselves. Revisit if so.
 
 ## Open snags
 
-### "About MyBizExco" copy is dense paragraphs, not scannable
-**Priority:** Low / not urgent — worth doing before wider testing.
-**Type:** UX / clarity.
+_None currently open._
 
-Scope: the "About MyBizExco" step (top tab right after Welcome, setup
-wizard step 1, `renderStepAbout()` at `MyBizExco_21.html:1625`). This is
-the first real content a new user reads, and most of it is dense
-paragraph text rather than scannable bullets:
+## Resolved snags
 
-- Info box "What it does" (line 1629) — one dense paragraph
-- Info box "How to use it" (line 1630) — one dense paragraph
-- FAQ-style card "Why MyBizExco Exists" (line 1634-1635) — one ~100-word
-  paragraph
-- FAQ-style card "Who It Changes, and How" (line 1638-1639) — one
-  ~100-word paragraph
-- The standard FAQ list below (`FAQS` array, rendered at line 1654) —
-  plain-paragraph answers throughout
+### "About MyBizExco" copy is dense paragraphs, not scannable — RESOLVED 2026-08-05/06
+**Was:** Low / not urgent. **Type:** UX / clarity.
 
-Already fine, no change needed: the third card, "What the World Looks
-Like When It Exists" (line 1643-1649), is already formatted as 5 clean
-bullet points.
+Original scope: the "About MyBizExco" step (`renderStepAbout()`,
+`MyBizExco_21.html`), most of it dense paragraph text rather than
+scannable bullets — both info-boxes, the "Why MyBizExco Exists" and
+"Who It Changes, and How" faq-items, and the `FAQS` array's answers.
 
-Fix: reformat every paragraph block above into scannable bullet points,
-matching the style already used in "What the World Looks Like When It
-Exists".
+Resolved across two commits:
+- `905e90e` rewrote the wording of the "What it does" info-box (→ "What
+  is MyBizExco?") and the "Why MyBizExco Exists" faq-item (→ "Welcome
+  to MyBizExco"), and fixed a stale `FAQS[3].a` unrelated to formatting.
+- `61b9b14` converted to bullets: both info-boxes ("What is MyBizExco?",
+  "How to use it"), the "Who It Changes, and How" faq-item, and
+  `FAQS[1]` ("What does it do?").
 
-(Note: the literal Welcome screen itself — `#welcome`, line 269-282 — is
-already short and card-based, not paragraph-dense. No change needed
-there; the actual density is one screen later, in "About MyBizExco".)
+Deliberately left as prose, not overlooked: "Welcome to MyBizExco"
+(reads as an argument/origin story, not a feature list — bulleting it
+would flatten the rhetorical build) and `FAQS[0]`, `FAQS[2]`,
+`FAQS[3]`, `FAQS[4]` (no natural list content, already short). The
+"What the World Looks Like When It Exists" faq-item needed no change —
+it was already 5 clean bullets.
+
+QA: Puppeteer-core against real Edge, zero console/page errors on both
+commits, screenshots reviewed before committing, both confirmed live in
+production post-push.
+
+(Note: the literal Welcome screen itself — `#welcome`, line 269-282 — was
+never in scope here; it was already short and card-based, not
+paragraph-dense. The density was one screen later, in "About MyBizExco".)
