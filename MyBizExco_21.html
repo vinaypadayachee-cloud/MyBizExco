@@ -1619,7 +1619,7 @@ function renderStep(){
 // ═══ STEP 1: ABOUT MYBIZEXCO ═══
 const FAQS=[
   {q:'What is MyBizExco?',a:'MyBizExco is an AI-powered governance operating system built for South African SMMEs. It gives your business an instant "AI Exco" — a Deputy CEO, CFO, COO, CRO, CHRO and CTO voice — that deliberates real decisions, produces boardroom-ready minutes, and keeps your governance audit trail.'},
-  {q:'What does it do?',a:'It runs your Board, Exco, Subcommittee, Management, Shareholder and Coffee Exco meetings end-to-end: builds the agenda, deliberates each item through your AI leadership team, records the resolution, drafts the minutes, tracks the resulting actions, and distributes everything by email or WhatsApp.'},
+  {q:'What does it do?',raw:true,a:'It runs your Board, Exco, Subcommittee, Management, Shareholder and Coffee Exco meetings end-to-end:<ul style="margin:8px 0 0;padding-left:18px;line-height:1.65"><li>Builds the agenda</li><li>Deliberates each item through your AI leadership team</li><li>Records the resolution and drafts the minutes</li><li>Tracks the resulting actions</li><li>Distributes everything by email or WhatsApp</li></ul>'},
   {q:'How do I use it?',a:'Work through the tabs above in order — About Your Business, Compliance & Legal, Leadership Team, Decision Needed, Communication, Meeting Types — then press Launch MyBizExco. After that you can jump straight back to any tab at any time, from anywhere in the app.'},
   {q:'Is my data stored anywhere?',a:'Your governance data is stored securely in the cloud, scoped to your organisation only. You can still use the 💾 Save button (top right, or More tab) any time to export a manual local backup, and 📂 Restore to reload it.'},
   {q:'Who do I contact for support?',a:'Tap "📞 Contact Us" at the top of any page — it is always there, before and after you launch. We respond within 24 hours.'}
@@ -1628,8 +1628,8 @@ function renderStepAbout(){
   return`
     <div class="step-title">${COUNTRY.flag} About MyBizExco</div>
     <div class="step-sub">Intelligence that protects. Insight that grows.</div>
-    <div class="info-box"><div class="info-box-icon">🤖</div><div><div class="info-box-title">What is MyBizExco?</div><div class="info-box-body">MyBizExco combines intelligence that protects with insight that grows your business — an AI-powered advisory operating system built for South African SMMEs, spanning Strategy, HR, Marketing, Risk, Compliance, Legal, Regulatory, IT and Operations.<br><br>It gives your business an instant AI Exco — a Deputy CEO, CFO, COO, CRO, CHRO and CTO voice — that deliberates your real decisions across every part of the business. It runs your Board, Exco, Subcommittee, Management, Shareholder and Coffee Exco meetings end-to-end: builds the agenda, deliberates each item through your AI leadership team, records the resolution, drafts the minutes, tracks the resulting actions, and distributes everything by email or WhatsApp.</div></div></div>
-    <div class="info-box"><div class="info-box-icon">🧭</div><div><div class="info-box-title">How to use it</div><div class="info-box-body">Complete the tabs above in order — Business, Compliance, Leadership, Decision Rules, Communication, Meeting Types — then press Launch. Afterwards, jump straight to any tab, any time, from any page using the bar at the top.</div></div></div>
+    <div class="info-box"><div class="info-box-icon">🤖</div><div><div class="info-box-title">What is MyBizExco?</div><div class="info-box-body">MyBizExco combines intelligence that protects with insight that grows your business — an AI-powered advisory operating system for South African SMMEs, spanning Strategy, HR, Marketing, Risk, Compliance, Legal, Regulatory, IT and Operations.<ul style="margin:8px 0 0;padding-left:18px;line-height:1.65"><li>Instant AI Exco — a Deputy CEO, CFO, COO, CRO, CHRO and CTO voice that deliberates your real decisions across every part of the business</li><li>Runs your meetings end-to-end — Board, Exco, Subcommittee, Management, Shareholder and Coffee Exco</li><li>Builds the agenda, deliberates each item through your AI leadership team, and records the resolution</li><li>Drafts the minutes and tracks the resulting actions</li><li>Distributes everything by email or WhatsApp</li></ul></div></div></div>
+    <div class="info-box"><div class="info-box-icon">🧭</div><div><div class="info-box-title">How to use it</div><div class="info-box-body"><ul style="margin:0;padding-left:18px;line-height:1.65"><li>Complete the tabs above in order: Business, Compliance, Leadership, Decision Rules, Communication, Meeting Types</li><li>Press Launch when you're done</li><li>After that, jump straight to any tab, any time, from any page using the bar at the top</li></ul></div></div></div>
     <div class="card" style="margin-bottom:16px">
       <div class="faq-item">
         <div class="faq-q">Welcome to MyBizExco</div>
@@ -1637,7 +1637,7 @@ function renderStepAbout(){
       </div>
       <div class="faq-item">
         <div class="faq-q">Who It Changes, and How</div>
-        <div class="faq-a">The owner stops carrying every decision alone, and starts making better ones — faster, and with fewer blind spots. That single shift compounds outward. A business that survives its first hard years keeps its staff employed. Staff who keep their jobs support families, spend in their local economy, and build the kind of financial stability that becomes generational rather than month-to-month. Customers get a business that's still there next year, still improving. Multiply that across thousands of SMMEs — the backbone of South Africa's economy — and MyBizExco isn't just helping individual businesses. It's strengthening the foundation the whole economy stands on.</div>
+        <div class="faq-a">The owner stops carrying every decision alone, and starts making better ones — faster, and with fewer blind spots. That single shift compounds outward:<ul style="margin:8px 0 0;padding-left:18px;line-height:1.65"><li>A business that survives its first hard years keeps its staff employed</li><li>Staff who keep their jobs support families, spend in their local economy, and build financial stability that becomes generational rather than month-to-month</li><li>Customers get a business that's still there next year, still improving</li><li>Multiply that across thousands of SMMEs — the backbone of South Africa's economy — and MyBizExco isn't just helping individual businesses, it's strengthening the foundation the whole economy stands on</li></ul></div>
       </div>
       <div class="faq-item">
         <div class="faq-q">What the World Looks Like When It Exists</div>
@@ -1652,7 +1652,7 @@ function renderStepAbout(){
     </div>
     <div class="card" style="margin-bottom:16px">
       <div class="card-title">Frequently asked questions</div>
-      ${FAQS.map(f=>`<div class="faq-item"><div class="faq-q">${esc(f.q)}</div><div class="faq-a">${esc(f.a)}</div></div>`).join('')}
+      ${FAQS.map(f=>`<div class="faq-item"><div class="faq-q">${esc(f.q)}</div><div class="faq-a">${f.raw?f.a:esc(f.a)}</div></div>`).join('')}
     </div>
     <div class="info-box"><div class="info-box-icon">📞</div><div><div class="info-box-title">Need help?</div><div class="info-box-body">Tap "Contact Us" at the top of any page, any time.</div></div></div>
     <div class="nav-btns"><button class="btn-next" onclick="nextStep()">Continue →</button></div>`;
