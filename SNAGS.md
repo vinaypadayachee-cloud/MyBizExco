@@ -30,7 +30,47 @@ add/improve in-context copy on the send screens themselves. Revisit if so.
 
 ## Open snags
 
-_None currently open._
+### 2026-08-06 batch (UX/navigation review)
+
+#### Needs your decision before Claude Code starts (flag these explicitly)
+- **Meeting agenda page navigation** — currently only "Close meeting" exists.
+  Needs: Cancel meeting, Back, Continue (step through agenda items without
+  closing). OPEN QUESTION: should "Cancel" delete the meeting record, or
+  exit without finalizing (resumable draft)? Decide before building.
+- **Tools/More page "Continue" button** — greyed out, unclear destination.
+  Likely reusing shared step-nav UI meant for the setup flow. OPEN QUESTION:
+  does this page need forward navigation at all, or should it just not show
+  a Continue button?
+- **"Use template" flow** — no back/exit/continue once opened. OPEN QUESTION:
+  auto-continue on selection (with Back only), or select-then-confirm
+  (Continue + Back)? Decide the pattern before implementation.
+
+#### App-wide consistency passes (bigger than single-page fixes)
+- **Navigation labeling standard** — back/continue buttons should be labeled
+  with their actual destination/outcome (e.g. "← Leadership Team",
+  "Done — back to app →" as already done on the Decision Rules page),
+  not generic "Back"/"Continue". Apply to every page except initial
+  landing/sign-in. Sign-in edge case: if session is already active, don't
+  silently skip past landing — show "Continue" or "You're already signed in."
+- **Input-field visual affordance** — any field awaiting user input (text,
+  values) should get a light-blue highlight, consistent with landing-page
+  accent blocks, so it's immediately recognizable as actionable. Likely a
+  shared CSS class/component, not a per-page fix.
+
+#### Smaller, self-contained fixes
+- **Landing screen flash for signed-in users** — landing page briefly renders
+  before redirecting signed-in users to dashboard. Confirm whether
+  auth-check can happen pre-render to eliminate the flash.
+- **"Welcome" tab doesn't navigate anywhere** — tapping it on the dashboard
+  doesn't return to landing page. Clarify intended destination first.
+- **Score circle color** — solid red for low/starting scores reads as an
+  error state. Recommend amber/grey scale for low scores, reserve red for
+  genuine problems (if any exist).
+- **Score breakdown page ("What's behind your score")** — needs a short
+  explanatory line: what green vs. grey checkmarks mean, what the X/Y
+  fraction represents, and whether the page is purely informational or
+  expects user action. Also clarify how point caps (e.g. Board meetings
+  +25/25) are determined — tied to configured meeting cadence, or fixed?
 
 ## Resolved snags
 
