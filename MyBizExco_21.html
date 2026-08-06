@@ -55,6 +55,7 @@ input,textarea,select{font-family:inherit;font-size:14px}
 .req{font-size:10px;font-weight:700;color:#dc2626;background:#fee2e2;padding:1px 6px;border-radius:4px;margin-left:4px}
 .field input,.field textarea,.field select{width:100%;padding:11px 13px;border:1px solid #e2e8f0;border-radius:10px;font-size:14px;outline:none;background:#fff;transition:border-color 0.2s}
 .field input:focus,.field textarea:focus,.field select:focus{border-color:#F59E0B}
+.field input.field-empty:not(:focus),.field textarea.field-empty:not(:focus),.field select.field-empty:not(:focus){border-color:#bfdbfe;background:#eff6ff}
 .hint{font-size:11px;color:#94a3b8;margin-top:4px}
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 /* SECTOR GRID */
@@ -1207,6 +1208,18 @@ let S = {
 // nowTime defined in data section
 function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 
+function refreshFieldEmptyStates(root){
+  (root||document).querySelectorAll('.field input,.field textarea,.field select').forEach(el=>{
+    el.classList.toggle('field-empty', !el.value);
+  });
+}
+document.addEventListener('input', e=>{
+  if(e.target.matches('.field input,.field textarea')) e.target.classList.toggle('field-empty', !e.target.value);
+});
+document.addEventListener('change', e=>{
+  if(e.target.matches('.field select')) e.target.classList.toggle('field-empty', !e.target.value);
+});
+
 function showToast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg; t.classList.add('show');
@@ -1216,6 +1229,7 @@ function showToast(msg){
 function openModal(html){
   document.getElementById('modalBox').innerHTML=html;
   document.getElementById('modalOverlay').classList.add('open');
+  refreshFieldEmptyStates(document.getElementById('modalBox'));
 }
 function closeModal(e){
   if(!e||e.target===document.getElementById('modalOverlay'))
@@ -1279,6 +1293,7 @@ function renderAuthScreen(){
 function renderAuthBody(){
   const el=document.getElementById('authBody');
   if(el) el.innerHTML=renderAuthScreen();
+  if(el) refreshFieldEmptyStates(el);
 }
 async function ensureProfileExists(user){
   const { data: existing, error: selectError } = await sb.from('profiles').select('id').eq('id', user.id).maybeSingle();
@@ -1575,6 +1590,7 @@ function renderInviteBody(){
     <button class="btn-next" style="width:100%" ${S.inviteBusy?'disabled':''} onclick="${isSignup?'submitInviteSignUp()':'submitInviteSignIn()'}">${S.inviteBusy?'Please wait…':(isSignup?'Create account & accept →':'Sign in & accept →')}</button>
     <button class="btn-back" style="width:100%;margin-top:8px" onclick="toggleInviteAuthMode()">${isSignup?'Already have an account? Sign in':"Don't have an account? Create one"}</button>
   `;
+  refreshFieldEmptyStates(el);
 }
 
 // ═══════════════════════════════════════════
@@ -1625,6 +1641,7 @@ function renderStep(){
   else if(S.step===5) body.innerHTML=renderStep4();
   else if(S.step===6) body.innerHTML=renderStepCommunication();
   else body.innerHTML=renderStepMeetingTypes();
+  refreshFieldEmptyStates(body);
   renderAllTopTabs();
 }
 
@@ -2149,6 +2166,7 @@ function renderTab(){
   else if(S.tab==='log') el.innerHTML=renderLog()+renderAppNavBtns();
   else if(S.tab==='actions') el.innerHTML=renderActions()+renderAppNavBtns();
   else el.innerHTML=renderMore()+renderAppNavBtns();
+  refreshFieldEmptyStates(el);
 }
 
 // Back/Continue at the bottom of every operational app page
@@ -2263,7 +2281,7 @@ function renderBoard(){
       <div class="meeting-type-grid">${mtHtml}</div>
       <div class="field" style="margin-bottom:14px">
         <label>${isCoffee?'☕ What problem are you solving?':'📝 Meeting focus — what needs to be resolved? (optional)'}</label>
-        <textarea rows="${isCoffee?4:2}" placeholder="${isCoffee?'Describe the issue you need your team to solve right now. The AI will give targeted advice.':'e.g. Cash flow tight, new supplier decision, staffing issues...'}" oninput="S.meetingContext=this.value;updateCoffeeBtn()" style="width:100%;padding:11px 13px;border:1px solid ${S.meetingContext?'#F59E0B':'#e2e8f0'};border-radius:10px;font-size:13px;resize:vertical;outline:none">${esc(S.meetingContext)}</textarea>
+        <textarea rows="${isCoffee?4:2}" placeholder="${isCoffee?'Describe the issue you need your team to solve right now. The AI will give targeted advice.':'e.g. Cash flow tight, new supplier decision, staffing issues...'}" oninput="S.meetingContext=this.value;updateCoffeeBtn()" style="width:100%;padding:11px 13px;border-radius:10px;font-size:13px;resize:vertical;outline:none">${esc(S.meetingContext)}</textarea>
         ${isCoffee?'<div class="coffee-note">☕ Coffee meetings are informal but fully recorded. Minutes and action lists are automatically generated and saved for your governance audit trail.</div>':''}
       </div>
       ${!isCoffee?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
