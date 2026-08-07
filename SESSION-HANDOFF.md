@@ -317,6 +317,37 @@ once read.
     `switchTab()` body directly rather than summarizing — confirmed
     line 2138 reads `: tab` (not the old hardcoded `: 'welcome'`).
     `Last-Modified: Fri, 07 Aug 2026 08:10:20 GMT` postdates the push.
+- **Renamed the "Communication" top-tab label to "More"** (`2a47e12`,
+  "Rename top-tab label from \"Communication\" to \"More\"", 1 file
+  changed, 1 insertion/1 deletion — committed and pushed, confirmed
+  live in production). This was the piece explicitly deferred from the
+  top-tab-highlight fix above:
+  - Reported the full contents of `renderMore()` (all 8 sections —
+    Session data, Governance health, Email distribution lists,
+    WhatsApp groups, Communication items, Registers, Tools &
+    generators, CIPC filing guide) before proposing anything, since
+    only 3 of the 8 sections are actually communication-related.
+    Offered label directions as discussion starters rather than
+    picking one — you chose "More," matching the bottom-nav tab's own
+    name.
+  - Scope confirmed narrow before implementation: only the `label`
+    string in the `TOP_TABS` array changed (`MyBizExco_21.html:382`).
+    The `k:'communication'` key itself is untouched (still used
+    internally by `S.topActiveKey` and `switchTab()`'s
+    `tab==='more'` mapping) — renaming that would be a separate,
+    larger-blast-radius change, not done here. Also confirmed and left
+    alone: `STEP_LABELS`'s own, differently-scoped "Communication"
+    entry (`:1607`) — the wizard's step-6 progress header ("Step 6 of
+    7 — Communication"), which accurately describes that setup step
+    and isn't the same thing as this top-tab alias.
+  - QA passed: Puppeteer-core against real Edge, zero console/page
+    errors — confirmed the top-tab bar now reads "More" when on the
+    More tab, the word "Communication" no longer appears anywhere in
+    the top-tab bar, and the wizard's step-6 label is unchanged.
+  - Verified live: `curl`'d `https://mybizexco-vanilla.vercel.app/`
+    directly, grepped the served `TOP_TABS` entry directly — confirmed
+    line 382 reads `label:'More'`. Response headers also pasted in
+    full rather than summarized, per explicit request each time.
 
 ## Next up
 
