@@ -272,6 +272,52 @@ once read.
     `refreshFieldEmptyStates()`, the `.field-empty` CSS rule, and the
     absence of the old bespoke inline meeting-context indicator.
 
+### 2026-08-07
+- **Fixed top tab bar showing wrong highlight on Home/Minutes/Actions**
+  (`b1460bb`, "Fix top tab bar showing wrong highlight on
+  Home/Minutes/Actions", 1 file changed, 1 insertion/1 deletion —
+  committed and pushed, confirmed live in production):
+  - Read-only audit first (via a background research agent), covering
+    3 separate questions in one pass: the top-tab-bar/bottom-nav
+    relationship, whether the governance score shown in 3 places is
+    one shared computation or duplicated logic (confirmed: one shared
+    `govScore()` function, called independently but with identical
+    live state at each site — no duplication, no changes needed), and
+    whether the "More" page reached via bottom-nav vs. the Actions
+    page's "More →" button are the same page (confirmed: yes, both
+    literally call `switchTab('more')`, no divergence).
+  - The top-tab-bar audit found the actual bug: `switchTab()`
+    collapsed `S.topActiveKey` to a hardcoded `'welcome'` for any
+    bottom-nav tab without a `board`/`more` alias — meaning tapping
+    Home, Minutes, or Actions left the top bar incorrectly showing
+    "Welcome" highlighted, even though none of those three tabs have
+    a corresponding button in the 8-entry `TOP_TABS` array to begin
+    with.
+  - Fix scoped deliberately narrow, confirmed before implementation:
+    only `switchTab()`'s fallback changed (from hardcoded `'welcome'`
+    to `tab` itself), preserving `board`→`meetingtypes` and
+    `more`→`communication` unchanged. Explicitly out of scope by
+    request: the `communication` label (rename tracked as a separate
+    follow-up), the 5 wizard-only top-tab entries
+    (about/business/compliance/leadership/decisions), and the
+    `setStep()`/`renderStep()` writers of the same state variable.
+  - Net effect, confirmed and flagged before applying (not assumed):
+    since no `TOP_TABS` entry exists for `home`/`log`/`actions`, the
+    fix results in **no top-tab highlight** for those three rather
+    than a correctly-lit button — a real fix (stops showing the wrong
+    highlight) but not a positive one, since no button exists yet.
+    Adding one would be a separate, larger task.
+  - QA passed: Puppeteer-core against real Edge, zero console/page
+    errors, all 5 bottom-nav tabs checked — confirmed Home/Minutes/
+    Actions now show no top-tab highlight (previously wrongly showed
+    "Welcome"), Board/More unchanged ("Meeting Types"/"Communication"
+    still correctly highlight).
+  - Verified live: `curl`'d `https://mybizexco-vanilla.vercel.app/`
+    directly (not the Vercel dashboard), grepped the served
+    `switchTab()` body directly rather than summarizing — confirmed
+    line 2138 reads `: tab` (not the old hardcoded `: 'welcome'`).
+    `Last-Modified: Fri, 07 Aug 2026 08:10:20 GMT` postdates the push.
+
 ## Next up
 
 - **Send-invite UI** (More tab) — not yet built. Must restrict role
