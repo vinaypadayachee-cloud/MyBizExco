@@ -2175,9 +2175,12 @@ const APP_TAB_LABEL={home:'Home',board:'Meetings',log:'Minutes',actions:'Actions
 function renderAppNavBtns(){
   const idx=APP_TAB_ORDER.indexOf(S.tab);
   const prev=APP_TAB_ORDER[idx-1], next=APP_TAB_ORDER[idx+1];
+  const moreWrapsToHome = S.tab==='more';
   return renderNavFooter(
     {label:'← '+(prev?APP_TAB_LABEL[prev]:'Back'),onClick:prev?`switchTab('${prev}')`:'',disabled:!prev},
-    {label:(next?APP_TAB_LABEL[next]:'Continue')+' →',onClick:next?`switchTab('${next}')`:'',disabled:!next},
+    moreWrapsToHome
+      ? {label:'Home →',onClick:"switchTab('home')",disabled:false}
+      : {label:(next?APP_TAB_LABEL[next]:'Continue')+' →',onClick:next?`switchTab('${next}')`:'',disabled:!next},
     'app-nav-btns'
   );
 }
