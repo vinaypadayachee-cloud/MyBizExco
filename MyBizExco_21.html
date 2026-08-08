@@ -1188,7 +1188,7 @@ let S = {
   emailInputs:{}, numInputs:{}, newWaName:'',
   defaultMeetingType:'board', subcomName:'',
   // meeting
-  sessionOpen:false, activeSession:null, agendaItems:[], attendees:[],
+  sessionOpen:false, sessionNavDismissed:false, activeSession:null, agendaItems:[], attendees:[],
   meetingType:'board', meetingContext:'', financials:{revenue:'',expenses:''},
   pendingDocs:[], tab:'home', voiceOn:false, sessRef:0,
   govRem:[], showSupport:false,
@@ -2426,6 +2426,7 @@ async function openSession(tmplItems){
   S.agendaItems=items;
   S.activeSession={id:S.sessRef,ref,date:ds,time:ts,meetingType:S.meetingType,meetingContext:S.meetingContext,co:S.profile?.nm||'',ind:S.profile?.ind||'',dbId:null};
   S.sessionOpen=true;
+  S.sessionNavDismissed=false;
   S.pendingDocs=[];
   renderTab();
   showToast((MT[S.meetingType]?.label||'Meeting')+' opened — '+items.length+' items');
@@ -2496,7 +2497,11 @@ function renderSession(){
     <div style="margin-top:18px">
       <button onclick="closeMeeting()" style="width:100%;padding:15px;background:#fff5f5;color:#dc2626;border:1px solid #fca5a5;border-radius:12px;font-weight:800;font-size:14px;cursor:pointer">✓ Close meeting</button>
       <div class="hint" style="text-align:center;margin-top:6px">Also available at the top of the page — handy here once the agenda runs long.</div>
-    </div>`;
+    </div>
+    ${S.sessionNavDismissed?'':`<div class="nav-btns">
+      <button class="btn-back" style="background:#fff5f5;color:#dc2626;border-color:#fca5a5" onclick="cancelMeeting()">✕ Cancel meeting</button>
+      <button class="btn-next" onclick="dismissSessionNav()">Continue</button>
+    </div>`}`;
 }
 function uploadSessionDoc(e){
   const f=e.target.files?.[0];if(!f)return;
@@ -2836,6 +2841,7 @@ async function cancelMeeting(){
   showToast('Meeting cancelled');
   switchTab('board');
 }
+function dismissSessionNav(){S.sessionNavDismissed=true;renderTab();}
 function stripTags(html){return html.replace(/<[^>]*>/g,'\n').replace(/\n{2,}/g,'\n').trim();}
 
 // ═══════════════════════════════════════════
