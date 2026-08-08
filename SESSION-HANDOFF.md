@@ -393,6 +393,66 @@ once read.
     explicitly deferred — flagged as a real feature restructure, not
     a bug fix, and not part of the current priority queue.
 
+- **Meeting-cancel backend: schema change DONE and LIVE; UI not started**
+  (`3b231a6`, "Add cancelMeeting() backend and 'cancelled' meeting
+  status", 3 files changed, 66 insertions/2 deletions — committed and
+  pushed):
+  - Read-only audit first (via a background research agent): traced
+    how meetings get created/deleted, found `openSession()` inserts a
+    real `meetings` row into Supabase immediately (before the user
+    touches anything), found the schema's mixed FK cascade behavior
+    (`actions`/`ai_deliberation_log`/`communications_log` have no
+    cascade — a physical delete would be blocked by Postgres once
+    deliberation has started), and confirmed `renderSession()` has no
+    Cancel/Back/Continue UI at all today, using a fully separate
+    bespoke nav implementation (not `renderNavFooter()`/
+    `renderAppNavBtns()`).
+  - Decided: "Cancel" never deletes the meeting record. Instead
+    `meetings.status` gains a new `'cancelled'` value, preserving the
+    record and any dependent `actions`/`ai_deliberation_log` rows
+    intact — chosen specifically because those rows are the governance
+    audit trail this app exists to keep.
+  - **Schema migration is DONE and LIVE**, not just committed:
+    `supabase/010_meeting_cancelled_status.sql` was run directly
+    against the production Supabase database (no separate staging DB —
+    Preview and Production share one). Verified via direct query
+    against `pg_constraint`:
+    ```sql
+    SELECT pg_get_constraintdef(oid) LIKE '%cancelled%' AS has_cancelled,
+           length(pg_get_constraintdef(oid)) AS full_length
+    FROM pg_constraint
+    WHERE conname = 'meetings_status_check';
+    ```
+    Result: `has_cancelled = true`, `full_length = 94` (up from the
+    original 3-value constraint) — confirms `'cancelled'` is genuinely
+    present in the live constraint, not just proposed in a file.
+    Executed directly by the user — confirmed beforehand that Claude
+    Code has no mechanism to run DDL itself here (no Supabase MCP
+    tool, the service-role key only reaches the REST/RPC data API not
+    raw SQL, no linked `supabase` CLI, no DB connection string
+    anywhere in `.env`/`.env.local`).
+  - **`cancelMeeting()` backend function is committed and pushed, but
+    has no caller yet.** Modeled directly on `closeMeeting()`'s
+    Supabase-update pattern (same guard, same `showSaveErrorModal()`-
+    on-failure handling), plus the confirmed local-state behavior:
+    pushes a `status:'cancelled'` entry into `S.sessions` so it stays
+    visible in the Minutes tab (badge rendering itself still pending —
+    see below), tears down the same session-state fields
+    `closeMeeting()` resets, and returns to the Board tab.
+  - Logged two things in `SNAGS.md` rather than fixing them here: a
+    pre-existing, unrelated bug found during the audit (abandoned
+    `'open'` meetings silently hydrate as if closed, no status filter
+    in `hydrateOrgData()`'s `SELECT`), and the actual next-step item —
+    **no button anywhere in `renderSession()` invokes `cancelMeeting()`
+    yet, and the Cancel/Back/Continue button layout, labels, and
+    destinations for the meeting agenda page haven't been designed.**
+    That's the next required step, not started.
+  - QA passed on the backend piece: Puppeteer-core against real Edge,
+    zero console/page errors, confirmed `cancelMeeting()` is defined
+    alongside `closeMeeting()`/`stripTags()` with no syntax issues from
+    the insertion (no functional QA possible yet beyond that, since
+    there's no UI trigger to exercise).
+
 ## Next up
 
 - **Send-invite UI** (More tab) — not yet built. Must restrict role
