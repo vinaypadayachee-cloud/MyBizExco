@@ -62,6 +62,27 @@ add/improve in-context copy on the send screens themselves. Revisit if so.
   This is purely about reachability: Cancel needs to stay clickable
   after Continue, not disappear.
 
+### 2026-08-08 (found during Chairman-field design-decision audit)
+- **Org profile edits silently don't persist after launch** — found as
+  a side effect of auditing the Chairman-field decision below, not
+  caused by anything being built there; affects the app as it stands
+  today. `renderAppConfig()`'s `'business'` config key
+  (`MyBizExco_21.html:2198`) reuses the setup wizard's `renderStep1()`
+  to let the CEO edit org details (company name, CEO name, reg no.,
+  business size, province, revenue, priorities) post-launch via
+  Config → Business. Its inputs write directly to the wizard-scoped
+  `S.nm`/`S.ceoName`/etc. (e.g. `oninput="S.ceoName=this.value"`,
+  `:1714`), but `S.profile` — the object actually read by minutes,
+  deliberation prompts, and the topbar — is only ever set in three
+  places: `launchApp()` (`:2054`), `hydrateOrgData()` (`:2382`), and
+  the Save/Restore local-backup load (`:3391`). No `organisations`
+  table UPDATE call exists anywhere in the file. Net effect: editing
+  any field on that page visually accepts the change, but it never
+  reaches `S.profile`, is never saved to Supabase, and is silently
+  discarded on next reload. Likely fix direction (not decided): either
+  wire a real UPDATE into the Config → Business save path, or make the
+  page visibly setup-only and disable it post-launch.
+
 ## Design decisions
 
 Settled product decisions, not yet built. Ordered by build priority.
@@ -116,6 +137,12 @@ Decided:
 - Add an explicit Chairman name field to org setup, defaulting to the
   CEO/founder name, but recorded separately and shown in the minutes
   header ("Chaired by: [name]").
+- Scoped to setup-time only (Option A): the Chairman field ships in
+  `renderStep1()` and the org-creation RPC only, matching the current
+  (already limited) behavior of every other field on that page.
+  Deliberately not fixing the broader post-launch-edit-doesn't-persist
+  gap as part of this build — tracked separately as its own open snag
+  above ("Org profile edits silently don't persist after launch").
 
 Needs before build: read-only audit of org setup schema/UI and the
 minutes-rendering header to scope the field addition.
