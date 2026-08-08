@@ -349,6 +349,50 @@ once read.
     line 382 reads `label:'More'`. Response headers also pasted in
     full rather than summarized, per explicit request each time.
 
+- **Fixed the More tab's dead-end "Continue →" button** (`67e167a`,
+  "Wrap More tab's dead-end Continue button around to Home", 1 file
+  changed, 4 insertions/1 deletion — committed and pushed, confirmed
+  live in production):
+  - Answered a prerequisite question before proposing anything: is
+    "the page that loads when signed in" the same as the `'home'`
+    entry in `APP_TAB_ORDER`, or a separate screen? Traced 4 separate
+    entry points (sign-in success, session restore, first-time
+    `launchApp()`, and clicking the top-tab "Welcome" entry while
+    launched) — all 4 funnel into `switchTab('home')`. Confirmed:
+    Home is genuinely the app's landing point, not a separate concept.
+  - Fix: `renderAppNavBtns()` gains a special case for
+    `S.tab==='more'` only — its Continue button now wraps around to
+    Home instead of dead-ending (disabled, `onclick=""`). Label
+    changed from `"Continue →"` to `"Home →"` since it's now honest
+    about its actual destination, calling the same `switchTab('home')`
+    every other nav button already uses. Turns the 5 tabs into a full
+    loop: Home→Board→Minutes→Actions→More→Home.
+  - Scoped deliberately narrow, confirmed before implementation: only
+    More's `next` branch changed; `prev` and every other tab's `next`
+    computation in `renderAppNavBtns()` are untouched — verified
+    byte-for-byte identical for Home/Board/Minutes/Actions after the
+    change (same labels, same onclick targets, same disabled states
+    as before).
+  - QA passed: Puppeteer-core against real Edge, zero console/page
+    errors, all 5 tabs' nav-footer output checked, and the "Home →"
+    button was actually clicked (not just inspected) to confirm
+    `S.tab` becomes `'home'` afterward.
+  - Verified live: `curl`'d `https://mybizexco-vanilla.vercel.app/`
+    directly, grepped the served code — confirmed lines 2178-2184
+    match exactly, including the `moreWrapsToHome` variable name and
+    both branches of the ternary. `Last-Modified: Sat, 08 Aug 2026
+    04:04:59 GMT` postdates the push. Raw curl/grep output pasted in
+    full each time, not summarized, per explicit standing request.
+  - Separately discussed, deliberately left as-is (not a bug, a scope
+    decision): the "More →" button on the Actions tab, which leads to
+    the same More tab. A narrower label (e.g. "Send Communication")
+    would misrepresent 5 of the More tab's 8 sections — same reasoning
+    already applied when the top-tab label was renamed to "More"
+    earlier. Splitting the More tab into two separate tabs
+    ("Communication" and "Tools") was raised as a future option but
+    explicitly deferred — flagged as a real feature restructure, not
+    a bug fix, and not part of the current priority queue.
+
 ## Next up
 
 - **Send-invite UI** (More tab) — not yet built. Must restrict role
