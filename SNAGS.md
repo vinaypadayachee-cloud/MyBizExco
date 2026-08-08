@@ -148,26 +148,67 @@ Needs before build: read-only audit of org setup schema/UI and the
 minutes-rendering header to scope the field addition.
 
 ### 3. Minutes synthesis instead of concatenation — DECIDED 2026-08-08, not yet built
-**Type:** Feature / AI pipeline change. **Priority:** 3 of 3 (build last —
-most open-ended technically, and largely resolved for procedural items
-once decision 1 ships).
+**Type:** Feature / AI pipeline change — also a correctness fix.
+**Priority:** 3 of 3 (build last — most open-ended technically, and
+largely resolved for procedural items once decision 1 ships). Priority
+order unchanged, but see fabrication risk below: this is not purely a
+style/verbosity item.
 
-Problem: for substantive items, minutes currently concatenate every
-persona's full response verbatim, producing long minutes where personas
-often restate similar points — reads like a transcript, not real board
-minutes.
+Problem — reframed after read-only audit, 2026-08-08: the primary
+issue is correctness, not verbosity. `synPrompt()`
+(`MyBizExco_21.html:975-978`) receives the full per-persona `results`
+array (`role`/`verdict`/`reason`/`analysis`, built at `:2641`) but
+reduces it to a bare vote count ("4 of 6 support") before calling the
+AI — none of what any individual persona actually said is passed into
+the prompt. Any synthesis text that names a specific persona's
+specific concern (e.g. this decision's own example, "the CFO flagging
+cash-flow timing") would therefore have to be fabricated by the model,
+not summarized, since the grounding facts were never given to it. In
+an app whose purpose is a governance audit trail, minutes attributing
+an invented concern to a named executive is a fabrication risk, not a
+cosmetic one — this is the primary reason this needs fixing, ahead of
+and independent of the verbosity problem that originally motivated
+logging it.
 
-Decided: add a summarization pass after persona deliberation that
-synthesizes the discussion into real-minutes style — e.g. "The Exco
-supported proceeding, with the CFO flagging cash-flow timing and the
-CTO flagging system capacity" — rather than printing all persona
-responses in full.
+Secondary problem (the original ask): both `buildMins()` (minutes,
+`:1035-1048`) and `renderAgendaItem()` (the live in-session view,
+`:2520-2553`) print every persona's full response verbatim *and* the
+synthesis, additively, never one or the other — long output that reads
+like a transcript in both places, not just in the final minutes
+document.
 
-Needs before build: a technical decision not yet made — HOW the
-synthesis gets generated (a further API call summarizing the personas'
-outputs? a local heuristic/template? something else). Audit current
-minutes-generation code path and propose 2-3 concrete approaches before
-writing any code.
+Decided:
+- Scope covers both the minutes document and the live agenda-item
+  view, not minutes alone — confirmed 2026-08-08 specifically so the
+  two stay consistent once synthesis is properly grounded, rather than
+  fixing one and leaving the other's identical redundant display in
+  place.
+- `synPrompt()` must be extended to interpolate each persona's actual
+  role/verdict/reason/analysis into the prompt text before generating
+  a synthesis — not just the vote tally — so the output is grounded in
+  what was actually said rather than invented. This is a prerequisite,
+  not optional polish: the summarization-style rewrite below is not
+  safe to ship until this is fixed.
+- Once grounded, add a summarization pass after persona deliberation
+  that synthesizes the discussion into real-minutes style — e.g. "The
+  Exco supported proceeding, with the CFO flagging cash-flow timing
+  and the CTO flagging system capacity" — replacing the full
+  persona-by-persona printout in both `buildMins()` and
+  `renderAgendaItem()`, rather than printing all persona responses in
+  full alongside it.
+
+Needs before build: the "how is synthesis generated" question from the
+original entry is answered — the `callAPI()`/`synPrompt()` mechanism
+already exists and runs for every deliberated item (confirmed via
+read-only audit, 2026-08-08); no new pipeline is needed, only the
+prompt-grounding fix above. Remaining open item: how `buildMins()`/
+`renderAgendaItem()` should fall back for the one case where `item.rs`
+is populated but `item.syn` isn't yet available (a transient
+mid-deliberation state — confirmed the only current code path where
+this can happen, since `abortUnavailable()` at `:2627-2632` resets
+`rs` to empty on any synthesis failure, keeping the two fields
+synchronized in every other case). The full per-persona list remains
+the correct fallback display for that transient case.
 
 ## Resolved snags
 
