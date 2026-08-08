@@ -32,35 +32,6 @@ add/improve in-context copy on the send screens themselves. Revisit if so.
 
 ### 2026-08-06 batch (UX/navigation review)
 
-#### Needs your decision before Claude Code starts (flag these explicitly)
-- **Meeting agenda page navigation** — currently only "Close meeting" exists.
-  Needs: Cancel meeting, Back, Continue (step through agenda items without
-  closing). Decided 2026-08-08: "Cancel" never deletes the meeting
-  record — it sets a new `meetings.status` value of `'cancelled'`,
-  preserving the record and any `actions`/`ai_deliberation_log` rows
-  already written against it (a physical delete would be blocked by FK
-  constraints on those tables once deliberation has started, and would
-  destroy audit trail either way). Cancelled meetings stay visible in
-  the Minutes tab with a "Cancelled" badge, excluded from dashboard
-  stats and the governance score. See the entry directly below for
-  current implementation status.
-- **Meeting agenda page Cancel/Back/Continue UI — not yet started** —
-  the backend piece (`cancelMeeting()`, a `closeMeeting()`-style
-  Supabase status-update function, plus the
-  `010_meeting_cancelled_status.sql` migration adding `'cancelled'` to
-  `meetings.status`) has been proposed but not yet applied. Even once
-  it lands, `renderSession()` has no caller for it anywhere — no button
-  on the page invokes `cancelMeeting()`, and the actual Back/Continue
-  button layout, labels, and destinations for this page haven't been
-  designed at all. This is the next required step, not started.
-- **Tools/More page "Continue" button** — greyed out, unclear destination.
-  Likely reusing shared step-nav UI meant for the setup flow. OPEN QUESTION:
-  does this page need forward navigation at all, or should it just not show
-  a Continue button?
-- **"Use template" flow** — no back/exit/continue once opened. OPEN QUESTION:
-  auto-continue on selection (with Back only), or select-then-confirm
-  (Continue + Back)? Decide the pattern before implementation.
-
 #### Smaller, self-contained fixes
 - **Landing screen flash for signed-in users** — landing page briefly renders
   before redirecting signed-in users to dashboard. Confirm whether
@@ -91,6 +62,79 @@ add/improve in-context copy on the send screens themselves. Revisit if so.
   for stuck-open meetings vs. genuinely closed ones).
 
 ## Resolved snags
+
+### Meeting agenda page Cancel/Back/Continue navigation — RESOLVED 2026-08-08
+**Was:** needs-your-decision item. **Type:** UX / navigation / data model.
+
+Original ask: only "Close meeting" existed on the meeting agenda page.
+Needed Cancel meeting, Back, Continue.
+
+Resolved across two commits:
+- `3b231a6` — backend: `cancelMeeting()` (a `closeMeeting()`-style
+  Supabase status-update function) plus
+  `supabase/010_meeting_cancelled_status.sql`, adding `'cancelled'` to
+  `meetings.status`. Decided "Cancel" never deletes the meeting
+  record — a physical delete would be blocked by FK constraints on
+  `actions`/`ai_deliberation_log` once deliberation has started, and
+  would destroy audit trail either way. Migration run directly against
+  production (no separate staging DB), verified via a direct
+  `pg_constraint` query.
+- `b2c17f8` — UI: one "✕ Cancel meeting" button (calls
+  `cancelMeeting()`) plus one "Continue" button that only dismisses the
+  footer, nothing else. No separate "Back" button — since a real,
+  permanent `'open'` `meetings` row already exists in Supabase the
+  instant a session starts, there's no resumable-draft state for
+  "Back" to safely mean anything distinct from Cancel. Reuses the
+  existing `.nav-btns`/`.btn-back`/`.btn-next` CSS rather than
+  extending `renderNavFooter()`'s signature. `S.sessionNavDismissed`
+  resets on every `openSession()` call, so the footer reappears fresh
+  each new session.
+
+QA: Puppeteer-core against real Edge, zero console/page errors on both
+commits. Verified programmatically (not just visually): footer labels,
+Continue leaving the session open, footer reappearing on a new
+session, and Cancel actually tearing down the session and pushing a
+`status:'cancelled'` entry into `S.sessions`. Confirmed live in
+production post-push via `git show`/direct `curl`+`grep`, pasted in
+full each time per standing request.
+
+### "Use template" flow — no back/exit/continue — RESOLVED 2026-08-08
+**Was:** needs-your-decision item. **Type:** UX / navigation.
+
+Original ask: the "Use template" flow had no back/exit/continue once
+opened.
+
+Resolved as a side effect of the meeting-agenda-nav work above, not a
+separate implementation — required zero additional code. `useTmpl()`
+calls the exact same `openSession()` that `openSession(null)` (AI
+agenda) and `startCoffeeSession()` call, which renders the exact same
+`renderSession()` with its new Cancel/Continue footer. Verified, not
+assumed: drove the real UI (opened the template modal, clicked an
+actual "Use" button, not calling `useTmpl()` directly), confirmed the
+footer renders with identical labels/onclick handlers, and confirmed
+Cancel behaves identically for a template-originated session
+(`agendaItemTypes` all `'template'`, confirming the real template path
+was exercised). Zero console/page errors.
+
+### Tools/More page "Continue" button — RESOLVED 2026-08-07
+**Was:** needs-your-decision item. **Type:** UX / navigation.
+
+Original ask: the More tab's "Continue" button was greyed out with an
+unclear destination.
+
+Resolved in `67e167a` ("Wrap More tab's dead-end Continue button
+around to Home") — same commit already logged in `SESSION-HANDOFF.md`
+but never marked resolved here. `renderAppNavBtns()` gained a special
+case for `S.tab==='more'`: the button now reads "Home →" and calls
+`switchTab('home')`, since sign-in, launch, and session-restore all
+land on the `'home'` tab, making it the app's genuine landing point.
+Scoped narrowly — `prev` and every other tab's `next` computation are
+untouched.
+
+Confirmed 2026-08-08, during the meeting-cancel-navigation follow-up,
+that this is the *only* "Continue" reference anywhere on the More
+page — no second, separate button exists inside `renderMore()`'s own
+content.
 
 ### Navigation labeling standard — RESOLVED 2026-08-06
 **Was:** app-wide consistency pass. **Type:** UX / navigation.
