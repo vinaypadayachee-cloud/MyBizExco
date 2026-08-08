@@ -62,6 +62,86 @@ add/improve in-context copy on the send screens themselves. Revisit if so.
   This is purely about reachability: Cancel needs to stay clickable
   after Continue, not disappear.
 
+## Design decisions
+
+Settled product decisions, not yet built. Ordered by build priority.
+
+### 1. Procedural vs. Substantive agenda items — DECIDED 2026-08-08, not yet built
+**Type:** Feature / data model change. **Priority:** 1 of 3 (build first).
+
+Problem: currently every agenda item — including boilerplate items like
+Welcome, Apologies, Conflicts of interest, Closure — goes through the
+full multi-persona deliberation engine, even though there's nothing for
+personas to have a perspective on. This also directly causes bloated,
+repetitive minutes (see decision 3).
+
+Decided:
+- Add a manual Procedural/Substantive toggle at agenda item creation —
+  NOT auto-detected by title, to keep classification explicit and
+  auditable.
+- Default state for new items: Substantive (deliberation) — safer to
+  over-deliberate than silently skip real discussion.
+- Standard boilerplate items (Welcome, Apologies, Conflicts of interest,
+  Closure) ship pre-toggled as Procedural in templates and the AI-agenda
+  flow, with the CEO able to flip any individual item to Substantive if
+  something unusual comes up (e.g. a real conflict needing discussion).
+- Procedural mode swaps the "Deliberate" button for a lightweight
+  structured capture form (attendance, absentees, Y/N conflict declared
+  + detail field) — not just a skip-to-free-text.
+- Procedural items render in minutes as a plain factual line (e.g.
+  "Welcome — meeting opened, all directors present"), not a persona-
+  response block.
+
+Needs before build: read-only audit of current agenda-item data model,
+template structure, and renderSession()/deliberation call path to scope
+the actual change.
+
+### 2. CEO chair commentary + explicit Chairman field — DECIDED 2026-08-08, not yet built
+**Type:** Feature / schema addition. **Priority:** 2 of 3.
+
+Problem (a): no place for the CEO to comment on or react to an AI
+deliberation's output after seeing it — only a pre-deliberation note
+field exists.
+Problem (b): no concept of "chairman" exists in the app at all —
+implicitly assumed to be the CEO, never recorded. Given MyBizExco's
+King IV-aware SA governance positioning, chair/CEO separation is a
+recognised governance practice worth supporting even if most SMMEs will
+set them as the same person.
+
+Decided:
+- Add a post-deliberation "Chair's comment" field, distinct from the
+  existing pre-deliberation "Add CEO note" field. Gives the CEO/chair a
+  place to react to, challenge, or add context to AI output, and a
+  natural home for the actual decision reached.
+- Add an explicit Chairman name field to org setup, defaulting to the
+  CEO/founder name, but recorded separately and shown in the minutes
+  header ("Chaired by: [name]").
+
+Needs before build: read-only audit of org setup schema/UI and the
+minutes-rendering header to scope the field addition.
+
+### 3. Minutes synthesis instead of concatenation — DECIDED 2026-08-08, not yet built
+**Type:** Feature / AI pipeline change. **Priority:** 3 of 3 (build last —
+most open-ended technically, and largely resolved for procedural items
+once decision 1 ships).
+
+Problem: for substantive items, minutes currently concatenate every
+persona's full response verbatim, producing long minutes where personas
+often restate similar points — reads like a transcript, not real board
+minutes.
+
+Decided: add a summarization pass after persona deliberation that
+synthesizes the discussion into real-minutes style — e.g. "The Exco
+supported proceeding, with the CFO flagging cash-flow timing and the
+CTO flagging system capacity" — rather than printing all persona
+responses in full.
+
+Needs before build: a technical decision not yet made — HOW the
+synthesis gets generated (a further API call summarizing the personas'
+outputs? a local heuristic/template? something else). Audit current
+minutes-generation code path and propose 2-3 concrete approaches before
+writing any code.
+
 ## Resolved snags
 
 ### Abandoned 'open' meetings get silently treated as closed on reload — RESOLVED 2026-08-08
