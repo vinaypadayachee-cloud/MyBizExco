@@ -453,6 +453,52 @@ once read.
     the insertion (no functional QA possible yet beyond that, since
     there's no UI trigger to exercise).
 
+- **Cancel/Continue UI added to the meeting agenda page** (`b2c17f8`,
+  "Add Cancel/Continue UI to the meeting agenda page", 1 file changed,
+  8 insertions/2 deletions — committed and pushed, confirmed live in
+  production). Completes the "next required step" flagged in the entry
+  above:
+  - Read-only audit first: confirmed `renderSession()` has no natural
+    "previous step" to go Back to (agenda items render inline, all at
+    once, no pagination), and that a real `'open'` `meetings` row
+    already exists in Supabase the instant a session starts — so
+    "leaving" this page has no safe meaning distinct from cancelling
+    (no resumable-draft state exists anywhere in the app).
+  - Decided, discussed before implementing: no separate "Back" button
+    — a second button with the same real effect as Cancel would only
+    invite the wrong assumption that it behaves differently. Just one
+    "✕ Cancel meeting" button (calls `cancelMeeting()`), paired with a
+    "Continue" button that does exactly one thing — dismisses the
+    footer for the rest of that session — and nothing else (confirmed
+    explicitly, not assumed to mean "advance" the way Continue does
+    elsewhere in the app; dropped the "→" arrow for the same reason).
+  - `S.sessionNavDismissed` resets to `false` on every `openSession()`
+    call, so the footer reappears fresh each time a new session
+    starts, rather than staying dismissed forever once a user clicks
+    Continue once. Use Template inherits this identically, with no
+    separate code path — `useTmpl()` calls the same `openSession()`.
+  - Styling choice, flagged and confirmed rather than assumed: reused
+    the existing `.nav-btns`/`.btn-back`/`.btn-next` CSS classes
+    directly instead of extending `renderNavFooter()`'s signature —
+    that function's `back` slot has no class-override support (only
+    `next` does), and this pair isn't really back/next navigation
+    anyway (Continue doesn't go anywhere).
+  - QA passed: Puppeteer-core against real Edge, zero console/page
+    errors. Verified programmatically (not just visually): the footer
+    renders with correct labels, clicking Continue dismisses it while
+    leaving the session open (confirming Continue truly has no other
+    effect), re-opening a session brings the footer back, and clicking
+    Cancel actually tears down the session and pushes a
+    `status:'cancelled'` entry into `S.sessions`. Also screenshotted
+    the footer element alone to visually confirm the destructive-red
+    Cancel button vs. standard-amber Continue button styling.
+  - Verified live: `git show b2c17f8` and direct `curl`+`grep` against
+    `https://mybizexco-vanilla.vercel.app/` both pasted in full,
+    unsummarized, per explicit standing request — confirmed the served
+    HTML contains `dismissSessionNav()`, the `✕ Cancel meeting`/
+    `Continue` button markup, and `S.sessionNavDismissed`'s reset in
+    `openSession()`, at the same line numbers as the local commit.
+
 ## Next up
 
 - **Send-invite UI** (More tab) — not yet built. Must restrict role
