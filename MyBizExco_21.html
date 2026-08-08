@@ -74,6 +74,8 @@ input,textarea,select{font-family:inherit;font-size:14px}
 .badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;margin-left:4px}
 .badge-active{background:#d1fae5;color:#065f46}
 .badge-off{background:#f3f4f6;color:#6b7280}
+.badge-cancelled{background:#fee2e2;color:#991b1b}
+.badge-abandoned{background:#fef3c7;color:#92400e}
 .toggle-btn{padding:6px 14px;border-radius:20px;border:none;font-weight:700;font-size:12px;cursor:pointer;flex-shrink:0}
 .toggle-on{background:#F59E0B;color:#000}
 .toggle-off{background:#e2e8f0;color:#6b7280}
@@ -859,6 +861,7 @@ const nowTime = () => {
 
 // ── GOVERNANCE SCORE ──
 function govScore(sessions, resolutions, allActions, P) {
+  sessions = sessions.filter(s => s.status!=='cancelled' && s.status!=='open');
   let sc = 0;
   sc += Math.min(sessions.filter(s => s.meetingType === "board").length * 10, 25);
   sc += Math.min(sessions.filter(s => s.meetingType === "exco").length * 5, 20);
@@ -874,6 +877,7 @@ function govScore(sessions, resolutions, allActions, P) {
 
 // Same inputs, broken into the individual line items — powers the "what's behind this score" panel
 function govScoreBreakdown(sessions, resolutions, allActions, P) {
+  sessions = sessions.filter(s => s.status!=='cancelled' && s.status!=='open');
   const boardCount = sessions.filter(s => s.meetingType === "board").length;
   const excoCount = sessions.filter(s => s.meetingType === "exco").length;
   const hasShareholder = sessions.some(s => s.meetingType === "agm" || s.meetingType === "shareholder");
@@ -2231,19 +2235,20 @@ function renderScoreBreakdown(){
 // ═══════════════════════════════════════════
 function renderHome(){
   const P=S.profile||{};
+  const activeSessions=S.sessions.filter(s=>s.status!=='cancelled'&&s.status!=='open');
   const gs=govScore(S.sessions,S.resolutions,S.allActions,P);
   const cls=gs>=70?'green':gs>=40?'amber':'red';
   const label=gs>=70?'Strong governance':gs>=40?'Building governance':'Needs attention';
   const openAct=S.allActions.filter(a=>a.status==='Open').length;
   const highAct=S.allActions.filter(a=>a.status==='Open'&&a.priority==='High').length;
   const nextDl=S.govRem.filter(r=>r.days>0).sort((a,b)=>a.days-b.days)[0];
-  const lastSess=S.sessions[S.sessions.length-1];
+  const lastSess=activeSessions[activeSessions.length-1];
   return`
     <div class="score-hero">
       <div class="score-circle ${cls}">${gs}</div>
       <div class="score-label">${label}</div>
       <div class="stat-grid">
-        <div class="stat-box"><div class="stat-num">${S.sessions.length}</div><div class="stat-lbl">Meetings</div></div>
+        <div class="stat-box"><div class="stat-num">${activeSessions.length}</div><div class="stat-lbl">Meetings</div></div>
         <div class="stat-box"><div class="stat-num">${S.resolutions.length}</div><div class="stat-lbl">Resolutions</div></div>
         <div class="stat-box"><div class="stat-num" style="${openAct>0?'color:#D97706':''}">${openAct}</div><div class="stat-lbl">Open actions</div></div>
         <div class="stat-box"><div class="stat-num" style="${highAct>0?'color:#dc2626':''}">${highAct}</div><div class="stat-lbl">High priority</div></div>
@@ -2396,6 +2401,7 @@ async function hydrateOrgData(orgId){
       time: fmtTimeFrom(m.closed_at||m.created_at),
       meetingType: DB_MEETING_TYPE_REVERSE[m.meeting_type]||'board',
       closedAt: m.closed_at,
+      status: m.status,
       minutesStatus: versions.some(v=>v.status==='confirmed') ? 'confirmed' : 'draft',
       minutesVersions: versions.map(v=>({v:v.version_number, text:v.content, by:'Team', at:fmtDateFrom(v.created_at)+' '+fmtTimeFrom(v.created_at), confirmed:v.status==='confirmed'})),
       agendaItems: resolutionsForMeeting.map(r=>({id:r.id, text:r.resolution_text, type:'standing', checked:true, rs:[], qr:{pass:true, reason:r.quorum_reason||''}, syn:null})),
@@ -2857,10 +2863,13 @@ function renderLog(){
     const idx=S.sessions.length-1-i;
     const ver=sess.minutesVersions?.length||1;
     const status=sess.minutesStatus||'draft';
+    const badge=sess.status==='cancelled'?{cls:'badge-cancelled',label:'Cancelled'}
+      :sess.status==='open'?{cls:'badge-abandoned',label:'Abandoned'}
+      :{cls:status==='confirmed'?'badge-active':'badge-off',label:(status==='confirmed'?'Confirmed':'Draft')+' · v'+ver};
     return`<div class="session-card">
       <div class="session-card-header">
         <div>
-          <div class="session-card-type">${mt.icon} ${mt.label}${sess.meetingType==='coffee'?' (Informal)':''} <span class="badge ${status==='confirmed'?'badge-active':'badge-off'}" style="margin-left:4px">${status==='confirmed'?'Confirmed':'Draft'} · v${ver}</span></div>
+          <div class="session-card-type">${mt.icon} ${mt.label}${sess.meetingType==='coffee'?' (Informal)':''} <span class="badge ${badge.cls}" style="margin-left:4px">${badge.label}</span></div>
           <div class="session-card-date">${esc(sess.ref)} · ${esc(sess.date)} ${esc(sess.time||'')}</div>
           <div style="font-size:12px;color:#94a3b8;margin-top:2px">${passed} resolution${passed!==1?'s':''} passed</div>
         </div>
