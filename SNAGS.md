@@ -35,8 +35,24 @@ add/improve in-context copy on the send screens themselves. Revisit if so.
 #### Needs your decision before Claude Code starts (flag these explicitly)
 - **Meeting agenda page navigation** — currently only "Close meeting" exists.
   Needs: Cancel meeting, Back, Continue (step through agenda items without
-  closing). OPEN QUESTION: should "Cancel" delete the meeting record, or
-  exit without finalizing (resumable draft)? Decide before building.
+  closing). Decided 2026-08-08: "Cancel" never deletes the meeting
+  record — it sets a new `meetings.status` value of `'cancelled'`,
+  preserving the record and any `actions`/`ai_deliberation_log` rows
+  already written against it (a physical delete would be blocked by FK
+  constraints on those tables once deliberation has started, and would
+  destroy audit trail either way). Cancelled meetings stay visible in
+  the Minutes tab with a "Cancelled" badge, excluded from dashboard
+  stats and the governance score. See the entry directly below for
+  current implementation status.
+- **Meeting agenda page Cancel/Back/Continue UI — not yet started** —
+  the backend piece (`cancelMeeting()`, a `closeMeeting()`-style
+  Supabase status-update function, plus the
+  `010_meeting_cancelled_status.sql` migration adding `'cancelled'` to
+  `meetings.status`) has been proposed but not yet applied. Even once
+  it lands, `renderSession()` has no caller for it anywhere — no button
+  on the page invokes `cancelMeeting()`, and the actual Back/Continue
+  button layout, labels, and destinations for this page haven't been
+  designed at all. This is the next required step, not started.
 - **Tools/More page "Continue" button** — greyed out, unclear destination.
   Likely reusing shared step-nav UI meant for the setup flow. OPEN QUESTION:
   does this page need forward navigation at all, or should it just not show
@@ -59,6 +75,20 @@ add/improve in-context copy on the send screens themselves. Revisit if so.
   fraction represents, and whether the page is purely informational or
   expects user action. Also clarify how point caps (e.g. Board meetings
   +25/25) are determined — tied to configured meeting cadence, or fixed?
+
+### 2026-08-08 (found during meeting-cancel navigation audit)
+- **Abandoned 'open' meetings get silently treated as closed on reload**
+  — `hydrateOrgData()` (`MyBizExco_21.html:2364`) fetches every meeting
+  row for an org with no status filter at all (`:2368`), and
+  unconditionally maps all of them — including ones stuck at
+  `status:'open'` (e.g. a session abandoned mid-meeting, browser closed
+  before `closeMeeting()` ever ran) — into `S.sessions`, where they
+  render in the Minutes tab, count toward the dashboard's "Meetings"
+  stat, and count toward the governance score, exactly as if properly
+  closed. Pre-existing, not introduced by the meeting-cancel work.
+  Deliberately not fixed as part of that change — needs its own scoping
+  (likely a status filter in the `SELECT`, or explicit separate handling
+  for stuck-open meetings vs. genuinely closed ones).
 
 ## Resolved snags
 

@@ -2810,6 +2810,32 @@ async function closeMeeting(){
   showToast('Meeting closed ✓ — minutes drafted, ready to review in Minutes tab');
   switchTab('log');
 }
+async function cancelMeeting(){
+  if(!confirm('Cancel this meeting? It will be marked cancelled — this cannot be undone.'))return;
+  if(S.currentUser && S.currentOrgId && S.activeSession?.dbId){
+    const dbMeetingId=S.activeSession.dbId;
+    try{
+      const { error } = await sb.from('meetings').update({status:'cancelled'}).eq('id', dbMeetingId);
+      if(error) throw error;
+    }catch(e){
+      showSaveErrorModal('Could not cancel the meeting', 'We could not save the cancellation to the server: ' + (e.message||e) + '. The meeting is still open — please try again.');
+      return;
+    }
+  }
+  S.sessions.push({
+    dbId:S.activeSession?.dbId||null, ref:S.activeSession?.ref||'', date:today(), time:nowTime(),
+    meetingType:S.activeSession?.meetingType||'board', status:'cancelled',
+    agendaItems:[], attendees:[], documents:[], financials:{revenue:'',expenses:''}, meetingContext:''
+  });
+  S.sessionOpen=false;
+  S.activeSession=null;
+  S.agendaItems=[];
+  S.meetingContext='';
+  S.financials={revenue:'',expenses:''};
+  S.pendingDocs=[];
+  showToast('Meeting cancelled');
+  switchTab('board');
+}
 function stripTags(html){return html.replace(/<[^>]*>/g,'\n').replace(/\n{2,}/g,'\n').trim();}
 
 // ═══════════════════════════════════════════
