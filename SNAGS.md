@@ -48,20 +48,59 @@ add/improve in-context copy on the send screens themselves. Revisit if so.
   +25/25) are determined — tied to configured meeting cadence, or fixed?
 
 ### 2026-08-08 (found during meeting-cancel navigation audit)
-- **Abandoned 'open' meetings get silently treated as closed on reload**
-  — `hydrateOrgData()` (`MyBizExco_21.html:2364`) fetches every meeting
-  row for an org with no status filter at all (`:2368`), and
-  unconditionally maps all of them — including ones stuck at
-  `status:'open'` (e.g. a session abandoned mid-meeting, browser closed
-  before `closeMeeting()` ever ran) — into `S.sessions`, where they
-  render in the Minutes tab, count toward the dashboard's "Meetings"
-  stat, and count toward the governance score, exactly as if properly
-  closed. Pre-existing, not introduced by the meeting-cancel work.
-  Deliberately not fixed as part of that change — needs its own scoping
-  (likely a status filter in the `SELECT`, or explicit separate handling
-  for stuck-open meetings vs. genuinely closed ones).
+- **Meeting agenda page — Cancel unreachable after clicking Continue** —
+  once Continue dismisses the Cancel/Continue footer
+  (`dismissSessionNav()`), the only remaining action for the rest of the
+  session is "Close meeting" — there's no way to cancel the meeting if
+  the CEO changes their mind mid-session. Likely fix: add "Cancel
+  meeting" as a standing option (e.g. alongside "Close meeting" at the
+  bottom of the page) that stays available for the full session, rather
+  than only appearing in the initial dismissible footer. Does NOT
+  reopen the "should there be a Back button" question already settled
+  in `b2c17f8` — Cancel's behavior (`cancelMeeting()`,
+  `status:'cancelled'`) is already built, tested, and verified live.
+  This is purely about reachability: Cancel needs to stay clickable
+  after Continue, not disappear.
 
 ## Resolved snags
+
+### Abandoned 'open' meetings get silently treated as closed on reload — RESOLVED 2026-08-08
+**Was:** found during meeting-cancel navigation audit, not yet fixed.
+**Type:** data integrity / UX.
+
+Original scope: `hydrateOrgData()` fetched every meeting row for an org
+with no status filter, unconditionally mapping all of them — including
+ones stuck at `status:'open'` — into `S.sessions`, rendering them in the
+Minutes tab and counting them toward dashboard stats/governance score
+exactly as if properly closed.
+
+Resolved in `9edd476` ("Carry meeting status through hydration; badge
+and exclude correctly"):
+- Root-caused and reproduced first: mocked `hydrateOrgData()`'s real
+  mapping logic against synthetic closed/open/cancelled rows before
+  writing any fix — confirmed abandoned-open and the newly-shipped
+  `'cancelled'` status were hydrating to byte-for-byte identical,
+  indistinguishable empty "Draft · v1" cards, meaning the "Cancelled"
+  badge from `b2c17f8` was itself silently broken across any reload,
+  not just the older bug.
+- Checked blast radius against real production data (read-only SELECT
+  via the REST API): 4 real rows stuck at `status:'open'`, 0
+  `cancelled`, none with dependent `actions`/`ai_deliberation_log`
+  rows — confirmed not theoretical.
+- Fix: `status:m.status` now carried through hydration; `renderLog()`
+  renders a distinct "Cancelled" (red `badge-cancelled`) or "Abandoned"
+  (amber `badge-abandoned`) badge instead of the misleading Draft
+  badge. Both statuses stay visible in the Minutes tab (per the
+  earlier confirmed design) but are excluded from `govScore()`,
+  `govScoreBreakdown()`, and `renderHome()`'s Meetings stat/Last-meeting
+  card — filtered inside the scoring functions themselves so every
+  caller benefits automatically.
+
+QA: Puppeteer-core against real Edge, zero console/page errors.
+Verified programmatically: correct badge per status, Home's Meetings
+stat correctly excludes both, `govScore()`/`govScoreBreakdown()` agree
+with each other. Screenshot taken confirming the three visually
+distinct badge colors. Confirmed live in production post-push.
 
 ### Meeting agenda page Cancel/Back/Continue navigation — RESOLVED 2026-08-08
 **Was:** needs-your-decision item. **Type:** UX / navigation / data model.
